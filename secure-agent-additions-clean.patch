@@ -1,0 +1,1309 @@
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..581a687
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,13 @@
++# BTC Miner - Soulvan Coin Agent
++
++This repository contains a secure mining agent prototype that can run trusted miner binaries inside a hardened Docker sandbox, monitor hardware metrics, and help safely check/download releases.
++
++Key files:
++- `src/agent.py` - FastAPI agent that manages miners and implements a small policy loop.
++- `src/sandbox.py` - Hardened Docker runner that enforces 0755 on binaries, read-only mounts, seccomp, and GPG verification.
++- `src/updater_safe.py` - Safe release downloader with optional GPG verification.
++- `contrib/` - systemd service/slice and example seccomp profile.
++
++Notes:
++- You must supply miner binaries and signatures and place them under `bin/` and a public key under `keys/`.
++- The secure sandbox refuses to run unverified binaries.
+diff --git a/VERSION b/VERSION
+new file mode 100644
+index 0000000..6e8bf73
+--- /dev/null
++++ b/VERSION
+@@ -0,0 +1 @@
++0.1.0
+diff --git a/bin/installed-test-miner b/bin/installed-test-miner
+new file mode 100755
+index 0000000..353aaee
+--- /dev/null
++++ b/bin/installed-test-miner
+@@ -0,0 +1,3 @@
++#!/bin/sh
++# minimal test miner script
++printf "test miner running\n"
+diff --git a/bin/test-miner b/bin/test-miner
+new file mode 100755
+index 0000000..353aaee
+--- /dev/null
++++ b/bin/test-miner
+@@ -0,0 +1,3 @@
++#!/bin/sh
++# minimal test miner script
++printf "test miner running\n"
+diff --git a/bin/test-miner.sig b/bin/test-miner.sig
+new file mode 100644
+index 0000000..831a9f0
+--- /dev/null
++++ b/bin/test-miner.sig
+@@ -0,0 +1,11 @@
++-----BEGIN PGP SIGNATURE-----
++
++iQEzBAABCgAdFiEEG1vNZGNZ1OWASbkKjlBH6pQNLDMFAmkR/10ACgkQjlBH6pQN
++LDOhWAf/c3G1oZF6MuZYtdpX/RPxLeO/4PwqPeTVjtG5Ris66+b4k933xw0ZXFFm
++QHLHJiUFYCpZBGNVa5wAwDlPv/Ez654HdCDiDsyJIz5xKl+tOAgKTlBk4xPOdogm
++voj0trzRPPQ4nXp6pQRzxNBWf0xEvxmROM5wrtczmitbmdW+tmkt8FzKwdgpLNrr
++mTzxb+8eevFwbb+/pW+yybOwxOc7MforwsMwodIcftI8fFVqx+gb6GrkZOYeuhQl
++xt8Fz7quh66adHoSaTQw9EwalPR3TYfEGB2vwkqrcZQHxgT9CJS+baEWn2nkBscX
++Qye9Ux8nVg528m9+z4QwvnOLOjclng==
++=lN7e
++-----END PGP SIGNATURE-----
+diff --git a/contrib/miner-agent.service b/contrib/miner-agent.service
+new file mode 100644
+index 0000000..71fc0d8
+--- /dev/null
++++ b/contrib/miner-agent.service
+@@ -0,0 +1,16 @@
++[Unit]
++Description=Miner Agent (runs in miner-agent.slice)
++After=network.target
++Wants=network-online.target
++
++[Service]
++Type=simple
++User=root
++WorkingDirectory=/workspaces/btc-miner-soulvan-coin
++ExecStart=/usr/bin/python3 /workspaces/btc-miner-soulvan-coin/src/agent.py
++Restart=on-failure
++RestartSec=5
++Slice=miner-agent.slice
++
++[Install]
++WantedBy=multi-user.target
+diff --git a/contrib/miner-agent.slice b/contrib/miner-agent.slice
+new file mode 100644
+index 0000000..186cdd8
+--- /dev/null
++++ b/contrib/miner-agent.slice
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Slice for miner-agent resource accounting
++
++[Slice]
++CPUAccounting=yes
++MemoryAccounting=yes
++TasksAccounting=yes
+diff --git a/contrib/seccomp/miner-seccomp.json b/contrib/seccomp/miner-seccomp.json
+new file mode 100644
+index 0000000..fafff5c
+--- /dev/null
++++ b/contrib/seccomp/miner-seccomp.json
+@@ -0,0 +1,21 @@
++{
++  "defaultAction": "SCMP_ACT_ERRNO",
++  "archMap": [
++    {"architecture": "SCMP_ARCH_X86_64", "subArchitectures": []}
++  ],
++  "syscalls": [
++    {
++      "names": [
++        "read","write","exit","exit_group","rt_sigreturn","rt_sigaction",
++        "futex","nanosleep","clock_gettime","getrandom","brk","mmap","mprotect",
++        "munmap","close","fstat","lseek","pread64","pwrite64","access","openat",
++        "newfstatat","stat","lstat"
++      ],
++      "action": "SCMP_ACT_ALLOW",
++      "args": [],
++      "comment": "minimal allowed syscalls for user-space miner runtime",
++      "includes": {},
++      "excludes": {}
++    }
++  ]
++}
+diff --git a/keys/test-miner.pub b/keys/test-miner.pub
+new file mode 100644
+index 0000000..291dd91
+--- /dev/null
++++ b/keys/test-miner.pub
+@@ -0,0 +1,37 @@
++-----BEGIN PGP PUBLIC KEY BLOCK-----
++
++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
++br147+vGsSbkZdzE4JL3Q7io6EyK5RIfry0=
++=ZuGa
++-----END PGP PUBLIC KEY BLOCK-----
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..04b41bf
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1,6 @@
++fastapi>=0.95.0
++uvicorn[standard]>=0.22.0
++psutil>=5.9.0
++aiohttp>=3.8.0
++pydantic>=1.10.0
++pytest>=7.0.0
+diff --git a/src/__init__.py b/src/__init__.py
+new file mode 100644
+index 0000000..6f9e769
+--- /dev/null
++++ b/src/__init__.py
+@@ -0,0 +1,6 @@
++"""pkg init for miner agent sources"""
++
++__all__ = [
++    "agent",
++    "backends",
++]
+diff --git a/src/__pycache__/__init__.cpython-312.pyc b/src/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000..f0877b2
+Binary files /dev/null and b/src/__pycache__/__init__.cpython-312.pyc differ
+diff --git a/src/__pycache__/installer.cpython-312.pyc b/src/__pycache__/installer.cpython-312.pyc
+new file mode 100644
+index 0000000..0bd76a0
+Binary files /dev/null and b/src/__pycache__/installer.cpython-312.pyc differ
+diff --git a/src/__pycache__/sandbox.cpython-312.pyc b/src/__pycache__/sandbox.cpython-312.pyc
+new file mode 100644
+index 0000000..e0fafc3
+Binary files /dev/null and b/src/__pycache__/sandbox.cpython-312.pyc differ
+diff --git a/src/__pycache__/updater_safe.cpython-312.pyc b/src/__pycache__/updater_safe.cpython-312.pyc
+new file mode 100644
+index 0000000..75e6008
+Binary files /dev/null and b/src/__pycache__/updater_safe.cpython-312.pyc differ
+diff --git a/src/agent.py b/src/agent.py
+new file mode 100644
+index 0000000..d58aa49
+--- /dev/null
++++ b/src/agent.py
+@@ -0,0 +1,349 @@
++import asyncio
++import subprocess
++import os
++import re
++import logging
++from typing import Optional, Dict
++from fastapi import FastAPI, HTTPException
++import psutil
++
++from .backends import bitcoin, soulvan
++from .updater import check_and_show_release
++from .updater_safe import download_and_verify_release_asset
++from .installer import atomic_install, validate_installed
++from .hw_monitor import system_metrics
++from . import notifications
++import secrets
++
++LOG = logging.getLogger("miner-agent")
++logging.basicConfig(level=logging.INFO)
++
++# Basic configuration - edit per your binaries/pools
++CONFIG = {
++    # Replace the placeholder paths below with your trusted miner binaries, signatures and pubkeys
++    "bitcoin": {
++        "binary": "/path/to/bitcoin-miner",
++        "signature": "/path/to/bitcoin-miner.sig",
++        "pool": "stratum+tcp://pool:3333",
++        "user": "your_btc_wallet",
++        "extra": ""
++    },
++    "soulvan": {
++        "binary": "/path/to/soulvan-miner",
++        "signature": "/path/to/soulvan-miner.sig",
++        "pool": "stratum+tcp://soulvan-pool:4444",
++        "user": "your_soulvan_wallet",
++        "extra": ""
++    },
++    "policy": {
++        "prefer": ["soulvan", "bitcoin"]
++    },
++    "secure": {
++        "use_docker": True,
++        # Path to the public key used to verify binaries and seccomp signatures
++        "pubkey_path": "/path/to/miner_pubkey.asc",
++        "image": "debian:bookworm-slim",
++        "cpus": 0.5,
++        "memory_mb": 512,
++        "pids_limit": 200,
++        # Optional seccomp profile and its signature (verify before use)
++        "seccomp_path": "/path/to/seccomp.json",
++        "seccomp_sig_path": "/path/to/seccomp.json.sig",
++        # Optional AppArmor profile name (must be installed on host under /etc/apparmor.d/)
++        "apparmor_profile": None,
++        "extra_mounts": [
++            "/etc/ssl/certs:/etc/ssl/certs:ro"
++        ],
++        # Auto-replace behavior: if True, after successful verification attempt install
++        # If require_admin_confirmation is True, installation will create a pending token which must be confirmed
++        "auto_replace": False,
++        "require_admin_confirmation": True
++    },
++    # Notifications: webhook_url (or slack_webhook) and smtp settings
++    "notifications": {
++        "auto_send": False,
++        "webhook_url": None,
++        "smtp": {"enabled": False}
++    }
++}
++
++APP = FastAPI()
++CURRENT_PROC: Optional[subprocess.Popen] = None
++LAST_HASH: Dict[str, float] = {"bitcoin": 0.0, "soulvan": 0.0}
++
++HASH_RE = re.compile(r"([\d\.]+)\s*(H/s|KH/s|MH/s|GH/s|TH/s)", re.IGNORECASE)
++MULT = {"h/s":1, "kh/s":1e3, "mh/s":1e6, "gh/s":1e9, "th/s":1e12}
++
++def parse_hash_rate(line: str) -> Optional[float]:
++    m = HASH_RE.search(line)
++    if not m:
++        return None
++    val = float(m.group(1))
++    unit = m.group(2).lower()
++    for k in MULT:
++        if k in unit:
++            return val * MULT[k]
++    return val
++
++async def monitor_process(proc: subprocess.Popen, kind: str):
++    LOG.info("Monitoring process for %s (pid=%s)", kind, getattr(proc, "pid", None))
++    loop = asyncio.get_running_loop()
++    while proc.poll() is None:
++        line = await loop.run_in_executor(None, proc.stdout.readline)
++        if not line:
++            await asyncio.sleep(0.2)
++            continue
++        try:
++            text = line.decode(errors="ignore").strip()
++        except Exception:
++            text = str(line)
++        h = parse_hash_rate(text)
++        if h:
++            LAST_HASH[kind] = h
++            LOG.info("%s hash rate: %.3f H/s", kind, h)
++    LOG.info("Process %s ended", kind)
++
++async def start_miner(kind: str) -> Optional[subprocess.Popen]:
++    global CURRENT_PROC
++    if CURRENT_PROC and CURRENT_PROC.poll() is None:
++        LOG.warning("A miner is already running. Stop it first.")
++        return None
++
++    gen = bitcoin.generate_command if kind == "bitcoin" else soulvan.generate_command
++    cmd_list = gen(CONFIG[kind])
++
++    secure_cfg = CONFIG.get("secure", {})
++    use_docker = secure_cfg.get("use_docker", False)
++
++    if use_docker:
++        from sandbox import run_miner_in_docker
++
++        bin_path = CONFIG[kind].get("binary")
++        sig_path = CONFIG[kind].get("signature")
++        pubkey = secure_cfg.get("pubkey_path")
++
++        if not bin_path or not sig_path:
++            LOG.error("Secure docker mode requires 'binary' and 'signature' fields in CONFIG for %s", kind)
++            return None
++
++        binary = cmd_list[0]
++        args = cmd_list[1:]
++
++        try:
++            proc = run_miner_in_docker(
++                binary_path=binary,
++                binary_args=args,
++                sig_path=sig_path,
++                pubkey_path=pubkey,
++                image=secure_cfg.get("image"),
++                cpu_quota=secure_cfg.get("cpus", 0.5),
++                memory_mb=secure_cfg.get("memory_mb", 512),
++                pids_limit=secure_cfg.get("pids_limit", 200),
++                seccomp_path=secure_cfg.get("seccomp_path"),
++                extra_mounts=secure_cfg.get("extra_mounts"),
++                container_name=f"miner-{kind}"
++            )
++        except Exception as e:
++            LOG.exception("Failed to start secure container: %s", e)
++            return None
++
++        CURRENT_PROC = proc
++        asyncio.create_task(monitor_process(proc, kind))
++        return proc
++
++    cmd = cmd_list
++    LOG.info("Starting %s miner with: %s", kind, " ".join(cmd))
++    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
++    CURRENT_PROC = proc
++    asyncio.create_task(monitor_process(proc, kind))
++    return proc
++
++async def stop_miner():
++    global CURRENT_PROC
++    if not CURRENT_PROC:
++        return
++    try:
++        LOG.info("Stopping miner pid=%s", CURRENT_PROC.pid)
++        CURRENT_PROC.terminate()
++        await asyncio.get_running_loop().run_in_executor(None, CURRENT_PROC.wait, 10)
++    except Exception:
++        try:
++            CURRENT_PROC.kill()
++        except Exception:
++            pass
++    CURRENT_PROC = None
++
++def system_score() -> float:
++    mem = psutil.virtual_memory()
++    cpu = psutil.cpu_percent(interval=0.1)
++    score = (mem.available / (1024*1024)) - (cpu * 10)
++    return score
++
++async def decide_and_run():
++    pref = CONFIG["policy"]["prefer"]
++    scores = {k: LAST_HASH.get(k, 0.0) for k in pref}
++    chosen = max(scores, key=lambda k: scores[k] or 0.0)
++    if scores[chosen] == 0.0:
++        chosen = pref[0]
++    await start_miner(chosen)
++
++@APP.on_event("startup")
++async def startup_event():
++    version_path = os.path.join(os.path.dirname(__file__), "..", "VERSION")
++    version = "0.0.0"
++    try:
++        with open(version_path, "r") as vf:
++            version = vf.read().strip()
++    except Exception:
++        LOG.info("VERSION file not found; using default.")
++    try:
++        asyncio.create_task(check_and_show_release("example-owner", "example-miner-repo", version))
++    except Exception as e:
++        LOG.info("Update check failed: %s", e)
++    asyncio.create_task(policy_loop())
++
++async def policy_loop():
++    while True:
++        try:
++            if not CURRENT_PROC or (CURRENT_PROC and CURRENT_PROC.poll() is not None):
++                await decide_and_run()
++        except Exception as e:
++            LOG.exception("Policy loop error: %s", e)
++        await asyncio.sleep(10)
++
++@APP.post("/start/{kind}")
++async def api_start(kind: str):
++    if kind not in CONFIG:
++        raise HTTPException(status_code=400, detail="unknown kind")
++    proc = await start_miner(kind)
++    return {"ok": proc is not None, "pid": getattr(proc, "pid", None)}
++
++@APP.post("/stop")
++async def api_stop():
++    await stop_miner()
++    return {"ok": True}
++
++@APP.get("/status")
++async def api_status():
++    pid = getattr(CURRENT_PROC, "pid", None)
++    return {"running_pid": pid, "last_hash": LAST_HASH, "system_score": system_score()}
++
++@APP.get("/metrics")
++async def api_metrics():
++    try:
++        metrics = system_metrics()
++        return {"ok": True, "metrics": metrics}
++    except Exception as e:
++        LOG.exception("Failed to gather metrics: %s", e)
++        raise HTTPException(status_code=500, detail="metrics error")
++
++
++@APP.get("/alerts")
++async def api_alerts(cpu_threshold: Optional[int] = 95, temp_threshold: Optional[int] = 85):
++    try:
++        metrics = system_metrics()
++        thresholds = {"cpu_percent": cpu_threshold, "temperature_c": temp_threshold}
++        from .hw_monitor import check_thresholds
++        alerts = check_thresholds(metrics, thresholds)
++        # auto-send notifications if configured
++        if alerts and CONFIG.get("notifications", {}).get("auto_send"):
++            ncfg = CONFIG.get("notifications", {})
++            res = notifications.notify_alerts(alerts, ncfg)
++            return {"ok": True, "alerts": alerts, "notified": res}
++        return {"ok": True, "alerts": alerts}
++    except Exception as e:
++        LOG.exception("Failed to gather alerts: %s", e)
++        raise HTTPException(status_code=500, detail="alerts error")
++
++@APP.post("/update/check")
++async def api_update_check(owner: str, repo: str):
++    version_path = os.path.join(os.path.dirname(__file__), "..", "VERSION")
++    version = "0.0.0"
++    try:
++        with open(version_path, "r") as vf:
++            version = vf.read().strip()
++    except Exception:
++        pass
++    try:
++        changed = await check_and_show_release(owner, repo, version)
++        return {"ok": True, "update_available": changed}
++    except Exception as e:
++        LOG.exception("update check failed: %s", e)
++        raise HTTPException(status_code=500, detail="update check failed")
++
++@APP.post("/update/download")
++async def api_update_download(owner: str, repo: str, asset_contains: str, pubkey_path: Optional[str] = None):
++    try:
++        path = await download_and_verify_release_asset(owner, repo, asset_contains, pubkey_path=pubkey_path)
++        if path:
++            return {"ok": True, "downloaded_path": path}
++        return {"ok": False, "message": "no verified asset downloaded; release page opened for manual review"}
++    except Exception as e:
++        LOG.exception("download failed: %s", e)
++        raise HTTPException(status_code=500, detail="download failed")
++
++
++@APP.post("/update/install")
++async def api_update_install(owner: str, repo: str, asset_contains: str, install_path: str, pubkey_path: Optional[str] = None):
++    """
++    Downloads and verifies a release asset, then atomically installs it to `install_path`.
++    This endpoint does NOT auto-execute the installed binary. It requires explicit install_path.
++    """
++    try:
++        path = await download_and_verify_release_asset(owner, repo, asset_contains, pubkey_path=pubkey_path)
++        if not path:
++            return {"ok": False, "message": "no verified asset downloaded; release page opened for manual review"}
++        # If auto_replace in config is enabled, perform install or create pending token depending on confirmation flag
++        secure_cfg = CONFIG.get("secure", {})
++        auto_replace = secure_cfg.get("auto_replace", False)
++        require_confirm = secure_cfg.get("require_admin_confirmation", True)
++
++        if not auto_replace:
++            return {"ok": False, "message": "auto_replace disabled in configuration; manual install required"}
++
++        # If admin confirmation required, create a pending install token and return it
++        if require_confirm:
++            token = secrets.token_urlsafe(16)
++            PENDING_INSTALLS[token] = {
++                "owner": owner,
++                "repo": repo,
++                "asset_contains": asset_contains,
++                "downloaded_path": path,
++                "install_path": install_path
++            }
++            return {"ok": True, "pending": True, "token": token, "message": "Confirm install with /update/confirm_install?token=<token>"}
++
++        # else perform install immediately
++        final = atomic_install(path, install_path)
++        ok = validate_installed(final)
++        return {"ok": ok, "installed_path": final}
++    except Exception as e:
++        LOG.exception("install failed: %s", e)
++        raise HTTPException(status_code=500, detail=f"install failed: {e}")
++
++def run_api():
++    import uvicorn
++    uvicorn.run("src.agent:APP", host="0.0.0.0", port=8000, reload=False)
++
++
++# In-memory store for pending installs (token -> info)
++PENDING_INSTALLS: Dict[str, Dict] = {}
++
++
++@APP.post("/update/confirm_install")
++async def api_confirm_install(token: str):
++    info = PENDING_INSTALLS.get(token)
++    if not info:
++        raise HTTPException(status_code=404, detail="pending token not found")
++    try:
++        final = atomic_install(info["downloaded_path"], info["install_path"])
++        ok = validate_installed(final)
++        # remove pending
++        del PENDING_INSTALLS[token]
++        return {"ok": ok, "installed_path": final}
++    except Exception as e:
++        LOG.exception("confirm install failed: %s", e)
++        raise HTTPException(status_code=500, detail=f"confirm install failed: {e}")
++
++if __name__ == "__main__":
++    run_api()
+diff --git a/src/backends/bitcoin.py b/src/backends/bitcoin.py
+new file mode 100644
+index 0000000..a111b75
+--- /dev/null
++++ b/src/backends/bitcoin.py
+@@ -0,0 +1,14 @@
++import shlex
++from typing import List, Dict
++
++def generate_command(config: Dict) -> List[str]:
++    """
++    Return command line list for a Bitcoin miner.
++    IMPORTANT: Replace the binary path in CONFIG with your trusted miner binary.
++    """
++    binary = config.get("binary", "/usr/local/bin/bitcoin-miner")
++    pool = config.get("pool", "stratum+tcp://pool.example:3333")
++    user = config.get("user", "wallet_address")
++    extra = config.get("extra", "")
++    cmd = f"{binary} -o {pool} -u {user} {extra}"
++    return shlex.split(cmd)
+diff --git a/src/backends/soulvan.py b/src/backends/soulvan.py
+new file mode 100644
+index 0000000..c40e6ae
+--- /dev/null
++++ b/src/backends/soulvan.py
+@@ -0,0 +1,14 @@
++import shlex
++from typing import List, Dict
++
++def generate_command(config: Dict) -> List[str]:
++    """
++    Return command line list for a Soulvan coin miner.
++    IMPORTANT: Replace the binary path in CONFIG with your trusted miner binary.
++    """
++    binary = config.get("binary", "/usr/local/bin/soulvan-miner")
++    pool = config.get("pool", "stratum+tcp://soulvan-pool.example:4444")
++    user = config.get("user", "soulvan_wallet")
++    extra = config.get("extra", "")
++    cmd = f"{binary} --pool {pool} --user {user} {extra}"
++    return shlex.split(cmd)
+diff --git a/src/cli.py b/src/cli.py
+new file mode 100644
+index 0000000..0f0eac8
+--- /dev/null
++++ b/src/cli.py
+@@ -0,0 +1,113 @@
++#!/usr/bin/env python3
++"""
++Simple CLI for common tasks:
++- run-agent         : start the FastAPI agent (uvicorn)
++- update-check      : open release page if newer release exists
++- update-download   : download & verify a release asset (does not install)
++"""
++import argparse
++import asyncio
++import os
++import sys
++import subprocess
++
++from updater import check_and_show_release
++from updater_safe import download_and_verify_release_asset
++
++def run_agent():
++    subprocess.run([sys.executable, "src/agent.py"])
++
++async def do_update_check(owner: str, repo: str):
++    version_path = os.path.join(os.path.dirname(__file__), "..", "VERSION")
++    version = "0.0.0"
++    try:
++        with open(version_path, "r") as vf:
++            version = vf.read().strip()
++    except Exception:
++        pass
++    changed = await check_and_show_release(owner, repo, version)
++    if changed:
++        print("Update available. Opened release page in host browser.")
++    else:
++        print("No update detected or check failed.")
++
++async def do_update_download(owner: str, repo: str, asset_contains: str, pubkey: str = None):
++    path = await download_and_verify_release_asset(owner, repo, asset_contains, pubkey_path=pubkey)
++    if path:
++        print("Verified asset downloaded to:", path)
++    else:
++        print("No verified asset downloaded; opened release page for manual review (if available).")
++
++def main():
++    p = argparse.ArgumentParser(prog="agent-cli")
++    sub = p.add_subparsers(dest="cmd", required=True)
++
++    sub.add_parser("run-agent", help="Run the FastAPI agent (foreground)")
++
++    ccheck = sub.add_parser("update-check", help="Check repo releases and open browser if newer")
++    ccheck.add_argument("owner")
++    ccheck.add_argument("repo")
++
++    cdl = sub.add_parser("update-download", help="Download + verify a release asset (no auto-install)")
++    cdl.add_argument("owner")
++    cdl.add_argument("repo")
++    cdl.add_argument("asset_contains", help="substring to match asset name (e.g. linux-amd64)")
++    cdl.add_argument("--pubkey", help="optional path to GPG public key to import for verification", default=None)
++
++    cinst = sub.add_parser("update-install", help="Download + verify + install a release asset (atomic)")
++    cinst.add_argument("owner")
++    cinst.add_argument("repo")
++    cinst.add_argument("asset_contains")
++    cinst.add_argument("install_path", help="destination path for the installed binary")
++    cinst.add_argument("--pubkey", help="optional path to GPG public key to import for verification", default=None)
++
++    args = p.parse_args()
++
++    if args.cmd == "run-agent":
++        run_agent()
++        return
++
++    if args.cmd == "update-check":
++        asyncio.run(do_update_check(args.owner, args.repo))
++        return
++
++    if args.cmd == "update-download":
++        asyncio.run(do_update_download(args.owner, args.repo, args.asset_contains, pubkey=args.pubkey))
++        return
++
++    if args.cmd == "update-install":
++        # perform download+verify and atomic install
++        # This CLI performs a local download+verify and then asks to install locally.
++        path = asyncio.run(download_and_verify_release_asset(args.owner, args.repo, args.asset_contains, pubkey_path=args.pubkey))
++        if not path:
++            print("No verified asset downloaded; release page opened for manual review (if available).")
++            return
++        # ask for confirmation
++        resp = input(f"Install {path} -> {args.install_path}? [y/N]: ").strip().lower()
++        if resp != "y":
++            print("Install aborted by user.")
++            return
++        # import installer lazily
++        from installer import atomic_install
++        try:
++            final = atomic_install(path, args.install_path)
++            print("Installed to:", final)
++        except Exception as e:
++            print("Install failed:", e)
++        return
++
++    if args.cmd == "confirm-install":
++        # Confirm a pending install token on a running agent (HTTP POST)
++        import urllib.parse, urllib.request
++        token = args.token
++        url = f"http://localhost:8000/update/confirm_install?token={urllib.parse.quote(token)}"
++        try:
++            req = urllib.request.Request(url, method="POST")
++            with urllib.request.urlopen(req, timeout=10) as resp:
++                print(resp.read().decode())
++        except Exception as e:
++            print("Confirm install failed:", e)
++        return
++
++if __name__ == "__main__":
++    main()
+diff --git a/src/hw_monitor.py b/src/hw_monitor.py
+new file mode 100644
+index 0000000..d6d3d1a
+--- /dev/null
++++ b/src/hw_monitor.py
+@@ -0,0 +1,64 @@
++import subprocess
++import shutil
++import psutil
++from typing import Dict, Optional
++
++def get_nvidia_smi() -> Optional[Dict]:
++    if not shutil.which("nvidia-smi"):
++        return None
++    cmd = ["nvidia-smi", "--query-gpu=index,name,memory.total,memory.used,utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"]
++    try:
++        out = subprocess.check_output(cmd, text=True).strip().splitlines()
++        gpus = []
++        for line in out:
++            idx, name, mem_total, mem_used, util, temp = [x.strip() for x in line.split(",")]
++            gpus.append({
++                "index": int(idx),
++                "name": name,
++                "memory_total_mb": int(mem_total),
++                "memory_used_mb": int(mem_used),
++                "util_percent": int(util),
++                "temperature_c": int(temp),
++            })
++        return {"gpus": gpus}
++    except Exception:
++        return None
++
++def system_metrics() -> Dict:
++    mem = psutil.virtual_memory()
++    cpu = psutil.cpu_percent(interval=0.1)
++    metrics = {
++        "cpu_percent": cpu,
++        "mem_total_mb": int(mem.total / (1024*1024)),
++        "mem_available_mb": int(mem.available / (1024*1024)),
++    }
++    gpu = get_nvidia_smi()
++    if gpu:
++        metrics.update(gpu)
++    return metrics
++
++def check_thresholds(metrics: Dict, thresholds: Optional[Dict] = None) -> Dict:
++    """
++    Given metrics and optional thresholds, return a dict of alerts.
++    thresholds example: {"cpu_percent": 90, "temperature_c": 85}
++    """
++    if thresholds is None:
++        thresholds = {"cpu_percent": 95}
++    alerts = {}
++    for k, thr in thresholds.items():
++        # nested keys like GPU temperature may require special handling
++        if k in metrics:
++            try:
++                val = float(metrics[k])
++                if val >= thr:
++                    alerts[k] = {"value": val, "threshold": thr}
++            except Exception:
++                continue
++        else:
++            # try GPU nested fields
++            if "gpus" in metrics and k == "temperature_c":
++                for g in metrics["gpus"]:
++                    if g.get("temperature_c", 0) >= thr:
++                        alerts.setdefault(k, []).append({"gpu": g.get("index"), "value": g.get("temperature_c")})
++    return alerts
++
+diff --git a/src/installer.py b/src/installer.py
+new file mode 100644
+index 0000000..5f2308d
+--- /dev/null
++++ b/src/installer.py
+@@ -0,0 +1,50 @@
++import os
++import shutil
++import stat
++import tempfile
++import logging
++from typing import Optional
++
++LOG = logging.getLogger("miner-installer")
++
++def atomic_install(src_path: str, dest_path: str, mode: int = 0o755) -> str:
++    """
++    Atomically install a verified binary from `src_path` to `dest_path`.
++    - Writes to a temp file in the destination directory then renames it.
++    - Sets file mode to `mode` (default 0755).
++    - Ensures destination directory exists.
++    Returns the final path on success.
++    Raises on error.
++    """
++    if not os.path.exists(src_path):
++        raise FileNotFoundError(f"source does not exist: {src_path}")
++
++    d = os.path.dirname(os.path.abspath(dest_path))
++    os.makedirs(d, exist_ok=True)
++
++    # Use tempfile in destination dir to ensure same-filesystem atomic rename
++    fd, tmp = tempfile.mkstemp(dir=d)
++    os.close(fd)
++    try:
++        shutil.copy2(src_path, tmp)
++        os.chmod(tmp, mode)
++        # atomic move
++        os.replace(tmp, dest_path)
++        LOG.info("Installed %s -> %s", src_path, dest_path)
++        return dest_path
++    except Exception:
++        # cleanup temp file on failure
++        try:
++            os.unlink(tmp)
++        except Exception:
++            pass
++        raise
++
++def remove_if_exists(path: str):
++    if os.path.exists(path):
++        os.remove(path)
++
++def validate_installed(path: str, expected_mode: int = 0o755) -> bool:
++    st = os.stat(path)
++    mode = stat.S_IMODE(st.st_mode)
++    return mode == expected_mode and stat.S_ISREG(st.st_mode)
+diff --git a/src/notifications.py b/src/notifications.py
+new file mode 100644
+index 0000000..18bac3d
+--- /dev/null
++++ b/src/notifications.py
+@@ -0,0 +1,66 @@
++import json
++import smtplib
++from email.message import EmailMessage
++from typing import Dict, Optional
++import urllib.request
++import logging
++
++LOG = logging.getLogger("miner-notifications")
++
++def send_webhook(url: str, payload: Dict) -> bool:
++    try:
++        data = json.dumps(payload).encode("utf-8")
++        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
++        with urllib.request.urlopen(req, timeout=10) as resp:
++            return resp.getcode() in (200, 201, 202)
++    except Exception as e:
++        LOG.exception("Webhook send failed: %s", e)
++        return False
++
++def send_email(smtp_cfg: Dict, subject: str, body: str, recipients: Optional[list] = None) -> bool:
++    try:
++        msg = EmailMessage()
++        msg["Subject"] = subject
++        msg["From"] = smtp_cfg.get("from_addr")
++        msg["To"] = ",".join(recipients or smtp_cfg.get("recipients", []))
++        msg.set_content(body)
++
++        host = smtp_cfg.get("host", "localhost")
++        port = int(smtp_cfg.get("port", 25))
++        user = smtp_cfg.get("user")
++        password = smtp_cfg.get("password")
++        use_tls = smtp_cfg.get("tls", False)
++
++        if use_tls:
++            s = smtplib.SMTP(host, port, timeout=10)
++            s.starttls()
++        else:
++            s = smtplib.SMTP(host, port, timeout=10)
++
++        if user and password:
++            s.login(user, password)
++
++        s.send_message(msg)
++        s.quit()
++        return True
++    except Exception as e:
++        LOG.exception("Email send failed: %s", e)
++        return False
++
++def notify_alerts(alerts: Dict, cfg: Dict) -> Dict:
++    results = {"webhook": None, "email": None}
++    payload = {"type": "miner_alert", "alerts": alerts}
++    if not cfg:
++        return results
++    webhook = cfg.get("webhook_url") or cfg.get("slack_webhook")
++    if webhook:
++        results["webhook"] = send_webhook(webhook, payload)
++
++    smtp = cfg.get("smtp")
++    if smtp and smtp.get("enabled"):
++        subject = smtp.get("subject", "Miner alerts")
++        body = json.dumps(alerts, indent=2)
++        recipients = smtp.get("recipients")
++        results["email"] = send_email(smtp, subject, body, recipients)
++
++    return results
+diff --git a/src/sandbox.py b/src/sandbox.py
+new file mode 100644
+index 0000000..c58cd8a
+--- /dev/null
++++ b/src/sandbox.py
+@@ -0,0 +1,125 @@
++import os
++import shutil
++import stat
++import subprocess
++import logging
++from typing import List, Optional
++
++from .updater_safe import gpg_verify
++
++LOG = logging.getLogger("miner-sandbox")
++logging.basicConfig(level=logging.INFO)
++
++DEFAULT_IMAGE = "debian:bookworm-slim"
++
++def _ensure_docker_available():
++    if not shutil.which("docker"):
++        raise RuntimeError("docker not found on PATH. Install Docker to use the sandbox runner.")
++
++def _ensure_executable_and_mode(path: str):
++    if not os.path.exists(path):
++        raise FileNotFoundError(f"binary not found: {path}")
++    st = os.stat(path)
++    mode = stat.S_IMODE(st.st_mode)
++    if mode != 0o755:
++        raise PermissionError(f"binary permissions must be 0755 (found {oct(mode)}): {path}")
++    if not stat.S_ISREG(st.st_mode):
++        raise PermissionError(f"binary is not a regular file: {path}")
++
++def _reject_writable_mounts(mounts: List[str]):
++    for m in mounts:
++        parts = m.split(":")
++        host = parts[0]
++        mode = parts[2] if len(parts) >= 3 else None
++        if mode and mode != "ro":
++            raise PermissionError(f"Writable mount mode not allowed: {m}")
++        if not mode:
++            raise PermissionError(f"Mount mode must be explicit and read-only (add ':ro'): {m}")
++        if not os.path.exists(host):
++            raise FileNotFoundError(f"Mount host path does not exist: {host}")
++        st = os.stat(host)
++        if st.st_mode & stat.S_IWUSR or st.st_mode & stat.S_IWGRP or st.st_mode & stat.S_IWOTH:
++            raise PermissionError(f"Host mount path must not be writable: {host}")
++
++def run_miner_in_docker(
++    binary_path: str,
++    binary_args: List[str],
++    sig_path: Optional[str] = None,
++    pubkey_path: Optional[str] = None,
++    image: str = DEFAULT_IMAGE,
++    cpu_quota: float = 0.5,
++    memory_mb: int = 512,
++    pids_limit: int = 200,
++    container_name: Optional[str] = None,
++    seccomp_path: Optional[str] = None,
++    seccomp_sig_path: Optional[str] = None,
++    apparmor_profile: Optional[str] = None,
++    extra_mounts: Optional[List[str]] = None,
++) -> subprocess.Popen:
++    _ensure_docker_available()
++    _ensure_executable_and_mode(binary_path)
++
++    if sig_path:
++        LOG.info("Verifying binary with provided signature...")
++        ok = gpg_verify(sig_path, binary_path, pubkey_path)
++        if not ok:
++            raise RuntimeError("GPG verification failed. Refusing to run unverified binary.")
++        LOG.info("GPG verification succeeded.")
++    else:
++        raise RuntimeError("Signature required: provide sig_path to verify binary before running.")
++
++    name = container_name or f"miner-{os.getpid()}"
++    memory_arg = f"{memory_mb}m"
++    cpus_arg = str(cpu_quota)
++
++    mounts = [
++        f"{os.path.abspath(binary_path)}:/opt/miner:ro",
++        "/etc/ssl/certs:/etc/ssl/certs:ro",
++    ]
++    if extra_mounts:
++        mounts += extra_mounts
++
++    _reject_writable_mounts(mounts)
++
++    docker_cmd = [
++        "docker", "run", "--rm",
++        "--name", name,
++        "--cap-drop=ALL",
++        "--security-opt", "no-new-privileges",
++        "--read-only",
++        "--pids-limit", str(pids_limit),
++        "--memory", memory_arg,
++        "--cpus", cpus_arg,
++        "--tmpfs", "/tmp:rw,size=100m",
++    ]
++
++    if seccomp_path:
++        if not os.path.exists(seccomp_path):
++            raise FileNotFoundError(f"seccomp profile not found: {seccomp_path}")
++        # if signature provided, verify seccomp profile before using
++        if seccomp_sig_path:
++            if not os.path.exists(seccomp_sig_path):
++                raise FileNotFoundError(f"seccomp signature not found: {seccomp_sig_path}")
++            # verify signature of seccomp file
++            ok = gpg_verify(seccomp_sig_path, seccomp_path, pubkey_path)
++            if not ok:
++                raise RuntimeError("Seccomp profile signature verification failed")
++        docker_cmd += ["--security-opt", f"seccomp={seccomp_path}"]
++
++    # AppArmor support (profile name). Ensure host has the profile installed under /etc/apparmor.d/
++    if apparmor_profile:
++        profile_path = f"/etc/apparmor.d/{apparmor_profile}"
++        if not os.path.exists(profile_path):
++            raise FileNotFoundError(f"AppArmor profile not found on host: {profile_path}")
++        docker_cmd += ["--security-opt", f"apparmor={apparmor_profile}"]
++
++    for m in mounts:
++        docker_cmd += ["-v", m]
++
++    docker_cmd += ["--user", "65534:65534"]
++
++    docker_cmd += [image, "/opt/miner"] + binary_args
++
++    LOG.info("Running hardened container: %s", " ".join(docker_cmd))
++    proc = subprocess.Popen(docker_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
++    return proc
+diff --git a/src/updater.py b/src/updater.py
+new file mode 100644
+index 0000000..0f5e310
+--- /dev/null
++++ b/src/updater.py
+@@ -0,0 +1,32 @@
++import aiohttp
++import os
++import webbrowser
++from typing import Optional
++
++GITHUB_API = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
++
++async def latest_release_info(owner: str, repo: str) -> Optional[dict]:
++    url = GITHUB_API.format(owner=owner, repo=repo)
++    async with aiohttp.ClientSession() as session:
++        async with session.get(url, headers={"Accept": "application/vnd.github+json"}) as resp:
++            if resp.status == 200:
++                return await resp.json()
++            return None
++
++def open_release_in_browser(html_url: str):
++    # prefer devcontainer host browser helper if available
++    browser = os.environ.get("BROWSER")
++    if browser:
++        os.system(f'"$BROWSER" "{html_url}" &')
++    else:
++        webbrowser.open(html_url)
++
++async def check_and_show_release(owner: str, repo: str, current_version: str) -> bool:
++    info = await latest_release_info(owner, repo)
++    if not info:
++        return False
++    tag = info.get("tag_name", "")
++    if tag and tag != current_version:
++        open_release_in_browser(info.get("html_url", ""))
++        return True
++    return False
+diff --git a/src/updater_safe.py b/src/updater_safe.py
+new file mode 100644
+index 0000000..4864536
+--- /dev/null
++++ b/src/updater_safe.py
+@@ -0,0 +1,85 @@
++import aiohttp
++import asyncio
++import os
++import hashlib
++import subprocess
++import tempfile
++from typing import Optional
++
++GITHUB_API = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
++
++async def latest_release(owner: str, repo: str) -> Optional[dict]:
++    url = GITHUB_API.format(owner=owner, repo=repo)
++    async with aiohttp.ClientSession() as s:
++        async with s.get(url, headers={"Accept": "application/vnd.github+json"}) as r:
++            if r.status == 200:
++                return await r.json()
++            return None
++
++async def download_url(url: str, dest_path: str):
++    async with aiohttp.ClientSession() as s:
++        async with s.get(url) as r:
++            r.raise_for_status()
++            with open(dest_path, "wb") as f:
++                async for chunk in r.content.iter_chunked(1 << 20):
++                    f.write(chunk)
++
++def sha256_of(path: str) -> str:
++    h = hashlib.sha256()
++    with open(path, "rb") as f:
++        for chunk in iter(lambda: f.read(1 << 20), b""):
++            h.update(chunk)
++    return h.hexdigest()
++
++def gpg_verify(sig_path: str, data_path: str, pubkey_path: Optional[str] = None) -> bool:
++    try:
++        if pubkey_path:
++            subprocess.run(["gpg", "--import", pubkey_path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
++        res = subprocess.run(["gpg", "--verify", sig_path, data_path], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
++        return res.returncode == 0
++    except Exception:
++        return False
++
++def open_in_host_browser(url: str):
++    try:
++        os.system(f'"$BROWSER" "{url}" &')
++    except Exception:
++        import webbrowser
++        webbrowser.open(url)
++
++async def download_and_verify_release_asset(owner: str, repo: str, asset_name_contains: str,
++                                            pubkey_path: Optional[str] = None) -> Optional[str]:
++    info = await latest_release(owner, repo)
++    if not info:
++        return None
++    assets = info.get("assets", [])
++    chosen = None
++    sig_asset = None
++    for a in assets:
++        name = a.get("name", "")
++        if asset_name_contains in name and chosen is None:
++            chosen = a
++        if name.endswith(".asc") or name.endswith(".sig"):
++            if chosen and name.startswith(os.path.splitext(chosen.get("name", ""))[0]):
++                sig_asset = a
++    if not chosen:
++        return None
++    tmpdir = tempfile.mkdtemp(prefix="updater-")
++    data_path = os.path.join(tmpdir, chosen["name"])
++    await download_url(chosen["browser_download_url"], data_path)
++
++    if sig_asset:
++        sig_path = os.path.join(tmpdir, sig_asset["name"])
++        await download_url(sig_asset["browser_download_url"], sig_path)
++        ok = gpg_verify(sig_path, data_path, pubkey_path)
++        if ok:
++            return data_path
++        else:
++            open_in_host_browser(info.get("html_url", ""))
++            return None
++
++    h = sha256_of(data_path)
++    print("Downloaded:", data_path)
++    print("SHA256:", h)
++    open_in_host_browser(info.get("html_url", ""))
++    return None
+diff --git a/tests/__pycache__/conftest.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/conftest.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000..f993e64
+Binary files /dev/null and b/tests/__pycache__/conftest.cpython-312-pytest-9.0.0.pyc differ
+diff --git a/tests/__pycache__/test_installer.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/test_installer.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000..b4a2e3e
+Binary files /dev/null and b/tests/__pycache__/test_installer.cpython-312-pytest-9.0.0.pyc differ
+diff --git a/tests/__pycache__/test_sandbox.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/test_sandbox.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000..4fea9b0
+Binary files /dev/null and b/tests/__pycache__/test_sandbox.cpython-312-pytest-9.0.0.pyc differ
+diff --git a/tests/__pycache__/test_updater_safe.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/test_updater_safe.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000..004ff63
+Binary files /dev/null and b/tests/__pycache__/test_updater_safe.cpython-312-pytest-9.0.0.pyc differ
+diff --git a/tests/conftest.py b/tests/conftest.py
+new file mode 100644
+index 0000000..7c2719f
+--- /dev/null
++++ b/tests/conftest.py
+@@ -0,0 +1,7 @@
++import sys
++import os
++
++# Ensure repository root is on sys.path so tests can import `src` package
++ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
++if ROOT not in sys.path:
++    sys.path.insert(0, ROOT)
+diff --git a/tests/test_installer.py b/tests/test_installer.py
+new file mode 100644
+index 0000000..cf4249e
+--- /dev/null
++++ b/tests/test_installer.py
+@@ -0,0 +1,17 @@
++import tempfile
++import os
++import stat
++from src.installer import atomic_install, validate_installed
++
++def test_atomic_install_and_validate(tmp_path):
++    src = tmp_path / "srcbin"
++    src.write_bytes(b"binary")
++    dest_dir = tmp_path / "dest"
++    dest_dir.mkdir()
++    dest = dest_dir / "binprog"
++
++    final = atomic_install(str(src), str(dest))
++    assert os.path.exists(final)
++    assert validate_installed(final)
++    st = os.stat(final)
++    assert stat.S_IMODE(st.st_mode) == 0o755
+diff --git a/tests/test_sandbox.py b/tests/test_sandbox.py
+new file mode 100644
+index 0000000..a9b3ea3
+--- /dev/null
++++ b/tests/test_sandbox.py
+@@ -0,0 +1,37 @@
++import os
++import tempfile
++import stat
++import pytest
++from src import sandbox
++
++def test_ensure_executable_and_mode_rejects_nonexistent():
++    with pytest.raises(FileNotFoundError):
++        sandbox._ensure_executable_and_mode("/nonexistent/path/does/not/exist")
++
++def test_ensure_executable_and_mode_requires_0755(tmp_path):
++    f = tmp_path / "binfile"
++    f.write_bytes(b"#!/bin/sh\necho hi\n")
++    os.chmod(f, 0o644)
++    with pytest.raises(PermissionError):
++        sandbox._ensure_executable_and_mode(str(f))
++    os.chmod(f, 0o755)
++    sandbox._ensure_executable_and_mode(str(f))
++
++def test_reject_writable_mounts_requires_ro_and_nonwritable_host(tmp_path):
++    host = tmp_path / "writable"
++    host.mkdir()
++    os.chmod(host, 0o700)
++    mount = f"{host}:/opt/data:ro"
++    with pytest.raises(PermissionError):
++        sandbox._reject_writable_mounts([mount])
++    host2 = tmp_path / "readonly"
++    host2.mkdir()
++    os.chmod(host2, 0o555)
++    mount2 = f"{host2}:/opt/data:ro"
++    sandbox._reject_writable_mounts([mount2])
++
++def test_reject_writable_mounts_rejects_missing_mode(tmp_path):
++    host = tmp_path / "h"
++    host.mkdir()
++    with pytest.raises(PermissionError):
++        sandbox._reject_writable_mounts([f"{host}:/opt/data"])
+diff --git a/tests/test_updater_safe.py b/tests/test_updater_safe.py
+new file mode 100644
+index 0000000..e003e39
+--- /dev/null
++++ b/tests/test_updater_safe.py
+@@ -0,0 +1,30 @@
++import tempfile
++import os
++from src.updater_safe import sha256_of, gpg_verify
++
++def test_sha256_of_tmpfile():
++    tf = tempfile.NamedTemporaryFile(delete=False)
++    try:
++        tf.write(b"hello world")
++        tf.flush()
++        tf.close()
++        h = sha256_of(tf.name)
++        assert isinstance(h, str) and len(h) == 64
++    finally:
++        os.unlink(tf.name)
++
++def test_gpg_verify_fails_on_invalid_files():
++    fdata = tempfile.NamedTemporaryFile(delete=False)
++    fsig = tempfile.NamedTemporaryFile(delete=False)
++    try:
++        fdata.write(b"data")
++        fdata.flush()
++        fsig.write(b"sig")
++        fsig.flush()
++        fdata.close()
++        fsig.close()
++        ok = gpg_verify(fsig.name, fdata.name, pubkey_path=None)
++        assert ok is False
++    finally:
++        os.unlink(fdata.name)
++        os.unlink(fsig.name)

@@ -1,0 +1,1911 @@
+From f6dd63968ea44adc98ebc4d4354b4b5c41508f02 Mon Sep 17 00:00:00 2001
+From: soulvan coin <brianmuyuiyi@gmail.com>
+Date: Mon, 10 Nov 2025 15:24:29 +0000
+Subject: [PATCH] Checkpoint from VS Code for coding agent session
+
+---
+ ...6A99B937669F5F9815A5C1A61120D0A16445D4.rev |  32 ++
+ ...035234826DF789489B1F0F210E041510C8428A.key |  28 ++
+ ...C884A0342675A43265872D461EC68B51E35314.key |  28 ++
+ .gnupg_test/pubring.kbx                       | Bin 0 -> 1784 bytes
+ .gnupg_test/pubring.kbx~                      | Bin 0 -> 32 bytes
+ .gnupg_test/trustdb.gpg                       | Bin 0 -> 1280 bytes
+ README.md                                     |  13 +
+ VERSION                                       |   1 +
+ bin/installed-test-miner                      |   3 +
+ bin/test-miner                                |   3 +
+ bin/test-miner.sig                            |  11 +
+ contrib/miner-agent.service                   |  16 +
+ contrib/miner-agent.slice                     |   7 +
+ contrib/seccomp/miner-seccomp.json            |  21 ++
+ gen-key-params                                |  10 +
+ keys/test-miner.pub                           |  37 ++
+ requirements.txt                              |   6 +
+ src/__init__.py                               |   6 +
+ src/__pycache__/__init__.cpython-312.pyc      | Bin 0 -> 243 bytes
+ src/__pycache__/installer.cpython-312.pyc     | Bin 0 -> 2795 bytes
+ src/__pycache__/sandbox.cpython-312.pyc       | Bin 0 -> 6248 bytes
+ src/__pycache__/updater_safe.cpython-312.pyc  | Bin 0 -> 6652 bytes
+ src/agent.py                                  | 349 ++++++++++++++++++
+ src/backends/bitcoin.py                       |  14 +
+ src/backends/soulvan.py                       |  14 +
+ src/cli.py                                    | 113 ++++++
+ src/hw_monitor.py                             |  64 ++++
+ src/installer.py                              |  50 +++
+ src/notifications.py                          |  66 ++++
+ src/sandbox.py                                | 125 +++++++
+ src/updater.py                                |  32 ++
+ src/updater_safe.py                           |  85 +++++
+ .../conftest.cpython-312-pytest-9.0.0.pyc     | Bin 0 -> 678 bytes
+ ...est_installer.cpython-312-pytest-9.0.0.pyc | Bin 0 -> 3717 bytes
+ .../test_sandbox.cpython-312-pytest-9.0.0.pyc | Bin 0 -> 2835 bytes
+ ..._updater_safe.cpython-312-pytest-9.0.0.pyc | Bin 0 -> 4697 bytes
+ tests/conftest.py                             |   7 +
+ tests/test_installer.py                       |  17 +
+ tests/test_sandbox.py                         |  37 ++
+ tests/test_updater_safe.py                    |  30 ++
+ 40 files changed, 1225 insertions(+)
+ create mode 100644 .gnupg_test/openpgp-revocs.d/416A99B937669F5F9815A5C1A61120D0A16445D4.rev
+ create mode 100644 .gnupg_test/private-keys-v1.d/29035234826DF789489B1F0F210E041510C8428A.key
+ create mode 100644 .gnupg_test/private-keys-v1.d/E2C884A0342675A43265872D461EC68B51E35314.key
+ create mode 100644 .gnupg_test/pubring.kbx
+ create mode 100644 .gnupg_test/pubring.kbx~
+ create mode 100644 .gnupg_test/trustdb.gpg
+ create mode 100644 README.md
+ create mode 100644 VERSION
+ create mode 100755 bin/installed-test-miner
+ create mode 100755 bin/test-miner
+ create mode 100644 bin/test-miner.sig
+ create mode 100644 contrib/miner-agent.service
+ create mode 100644 contrib/miner-agent.slice
+ create mode 100644 contrib/seccomp/miner-seccomp.json
+ create mode 100644 gen-key-params
+ create mode 100644 keys/test-miner.pub
+ create mode 100644 requirements.txt
+ create mode 100644 src/__init__.py
+ create mode 100644 src/__pycache__/__init__.cpython-312.pyc
+ create mode 100644 src/__pycache__/installer.cpython-312.pyc
+ create mode 100644 src/__pycache__/sandbox.cpython-312.pyc
+ create mode 100644 src/__pycache__/updater_safe.cpython-312.pyc
+ create mode 100644 src/agent.py
+ create mode 100644 src/backends/bitcoin.py
+ create mode 100644 src/backends/soulvan.py
+ create mode 100644 src/cli.py
+ create mode 100644 src/hw_monitor.py
+ create mode 100644 src/installer.py
+ create mode 100644 src/notifications.py
+ create mode 100644 src/sandbox.py
+ create mode 100644 src/updater.py
+ create mode 100644 src/updater_safe.py
+ create mode 100644 tests/__pycache__/conftest.cpython-312-pytest-9.0.0.pyc
+ create mode 100644 tests/__pycache__/test_installer.cpython-312-pytest-9.0.0.pyc
+ create mode 100644 tests/__pycache__/test_sandbox.cpython-312-pytest-9.0.0.pyc
+ create mode 100644 tests/__pycache__/test_updater_safe.cpython-312-pytest-9.0.0.pyc
+ create mode 100644 tests/conftest.py
+ create mode 100644 tests/test_installer.py
+ create mode 100644 tests/test_sandbox.py
+ create mode 100644 tests/test_updater_safe.py
+
+diff --git a/.gnupg_test/openpgp-revocs.d/416A99B937669F5F9815A5C1A61120D0A16445D4.rev b/.gnupg_test/openpgp-revocs.d/416A99B937669F5F9815A5C1A61120D0A16445D4.rev
+new file mode 100644
+index 0000000..8d6e4cb
+--- /dev/null
++++ b/.gnupg_test/openpgp-revocs.d/416A99B937669F5F9815A5C1A61120D0A16445D4.rev
+@@ -0,0 +1,32 @@
++This is a revocation certificate for the OpenPGP key:
++
++pub   rsa2048 2025-11-10 [SCEAR]
++      416A99B937669F5F9815A5C1A61120D0A16445D4
++uid          Test Miner Key (test key) <test-miner@example.local>
++
++A revocation certificate is a kind of "kill switch" to publicly
++declare that a key shall not anymore be used.  It is not possible
++to retract such a revocation certificate once it has been published.
++
++Use it to revoke this key in case of a compromise or loss of
++the secret key.  However, if the secret key is still accessible,
++it is better to generate a new revocation certificate and give
++a reason for the revocation.  For details see the description of
++of the gpg command "--generate-revocation" in the GnuPG manual.
++
++To avoid an accidental use of this file, a colon has been inserted
++before the 5 dashes below.  Remove this colon with a text editor
++before importing and publishing this revocation certificate.
++
++:-----BEGIN PGP PUBLIC KEY BLOCK-----
++Comment: This is a revocation certificate
++
++iQE2BCABCgAgFiEEQWqZuTdmn1+YFaXBphEg0KFkRdQFAmkR/10CHQAACgkQphEg
++0KFkRdS16QgAmIyg+9H5zhOkmwPUu7nEpBRxWWNVx/VH816Txk0ITczTdAc35tJx
++OatfGVrnEh513b81NgDp6nV+rd1HXx+ZL/8xDPRocnBokrXIlNx2RfU2+Ul4Sjy1
++zItxPdAAYIezsQ7dWIZvdkSHk9T2AmSHVm4/wvAa0ZlIE0S0T6IklF6PIHwdKJLm
++vB74ukVboxSMclVLMhNlxQ1JhGF7m3LIiD7vDCyKFO9uLvnp3NiGg1Y1WgFmCEZ9
++hInRYCFSpSjjQOe4f5eDN0X5WP597ggpT7799kj/Ta8kzjFvrcN9Yr8V/rCZx3sx
++D8lPR1fFqsVBSgeZkee+3HGAgFMTPn8/wA==
++=bZWD
++-----END PGP PUBLIC KEY BLOCK-----
+diff --git a/.gnupg_test/private-keys-v1.d/29035234826DF789489B1F0F210E041510C8428A.key b/.gnupg_test/private-keys-v1.d/29035234826DF789489B1F0F210E041510C8428A.key
+new file mode 100644
+index 0000000..9cd2089
+--- /dev/null
++++ b/.gnupg_test/private-keys-v1.d/29035234826DF789489B1F0F210E041510C8428A.key
+@@ -0,0 +1,28 @@
++Created: 20251110T150605
++Key: (private-key (rsa (n #00B911273B732D3E28D44EEC624C148064A2230CC26C
++ DA40437D6D8E642485B5C316E03A4541E7A6A9BC7D25D812E263A4E8B5AE075B767FAC
++ 2AEBBC4AAF26A4577138604579F8829988A9C66855C8E9E3BEF2EF33FC5CF01AE25073
++ 587F454B06C02C85417FFC13EF8365F443F0400AE9A1B6AC9B03E9127F2485DAFF3662
++ 0992D9715877429A4473CCB6CA8389CBA0AB2788377D1F86EC93F196A82E00A7BD1494
++ ECB760F10EAC78A129BE55431190BDA2E2AA177FEA45910D789F47AF3D9429AB7FF756
++ 8D66EB2A30B7DE54AA02F66936A585FD5F68909598D5A3DE42619B3B81FA270FE38A48
++ F9FEF2B1AC25F35FB971559B94082268EC272C2193BC16056D#)(e #010001#)(d
++  #44832B29011CB0B460D4CF021CF4420BFF524678FBDF588723BA194ACD928A95ACB4
++ 5A1E25A5E2B757C664EA3723848C1A7297F8B54D8B3A6BB155C5B84DEFED4746FDACFA
++ D89B50C79D428C81A59DA0E8A1FB181DC7324461A032F3823A5EEA22DED87E45294720
++ 165EFA2CE49670F3C9205D8A0DCA8D44707AF57621E5ED70C47E91746A029A8E3BF3CE
++ 21CD809BB3A5DA2A0D1DDCAB6E36C19E3F94F11E49ACF2FE5DB1E4991EFF32CB1EC814
++ B2EC1BE4B1D3E002EF6B410A3FE75548A6C091B8FF42E4A9659B490D504C92CC17BE9F
++ 215B172F6D807FC0895265894D3DA3EB002252D901C838F4F9D48624677AF1764CB4DC
++ 7A232278AE853830CF469629#)(p #00CC46E2DC19CEB6545A02D349777747D5F0B2D8
++ 5D74ADF290A4982C4A62F98F0698310A21F32F1B707A40AE7B66E4091399DA6BDE6B76
++ C87F0732E257ACC94367734FC29FDD42F4D34F2FB79150FD21F0322138B4AA55916E08
++ 922BB86EC9B45C09936D18D4650473FF5E21FD07757A5CA0B5076009F9B3648301C619
++ E507A193#)(q #00E7ED17B003C512122071782B8917B49B602D18FC2C510488B0CAAF
++ CA2C9FDBEF44F623A05BA6DA286A408D2A351C77D97CBB32F8159FD4F65523B062BBDD
++ 789BF9D5691D09C864C8FA4CE6B21855CDF1C27194CBD5EC9C76C083C29C6DA86A5FD5
++ 36279040AAE65547B3B1832C46A7C0C9A3F171D05EA44FD0402630CEF01CFF#)(u
++  #00C88A6AABD0B1987900170152EFAC469D97B209AEE65F61EF456BDC9E7BB92BC8CB
++ 7049A2027C11A4032E176DBE9AAAF6E966B6428DD7943A2EAB1371F8C5A4E8CD3DEDF2
++ 1B6A66ABD3908BA20CF7320717E6430BAF91AC3CBAC78F06ABC43D6FDEDACD9E0FFF7F
++ 29D749F7282EF4A03319789E18B142BA364E69FE2939FB7798#)))
+diff --git a/.gnupg_test/private-keys-v1.d/E2C884A0342675A43265872D461EC68B51E35314.key b/.gnupg_test/private-keys-v1.d/E2C884A0342675A43265872D461EC68B51E35314.key
+new file mode 100644
+index 0000000..05df5db
+--- /dev/null
++++ b/.gnupg_test/private-keys-v1.d/E2C884A0342675A43265872D461EC68B51E35314.key
+@@ -0,0 +1,28 @@
++Created: 20251110T150605
++Key: (private-key (rsa (n #00ECF6DF5C766A5E3BD5FB059A3FDA888D0967913759
++ B5AC48F81BF15640906152A86B626212C65903D0FBE1C73BC80B8069F32E0D4970F4FB
++ 3F306FFD5835426B58808A65AF5D57E3DA1046DE37A52FB31B14650A4D44C11811F898
++ 0FDA47FCE4D571E83FECF164A634BBE22A80A8BB42466E5EFBD3270DC53CA36F7BAE96
++ 1A4B3298B1106046881C6876AC2F01CCB8D0271BA808F0554E726C962E144B9C2C3D18
++ 11ECF19F5ED9CBCF97BC248F7211555B942070E54BB17AD34C0C1D963C2052F2BADA9B
++ AB2AE4BFC1C7CE74A7495CD77CF7481C9067716A66695FCE82A63E48140A613A3D0B92
++ 77A3DAEE2F3BF13AC4710833D5FE862C87B17EB2BB5D195283#)(e #010001#)(d
++  #3B1D8D7476302C09166554ACFA000D2FCE2851B072C7614F24E267AF2255428A49EC
++ DC32E647283ECCFC81836015145579590AE492AD44D8871790E0AD883FE522C3928332
++ A001449D0A917B6F7B5CAE7C73768F7EDE47A3B71C02E775879EFE0187B4AE79F070B1
++ 0C17D120D44F03C45168C8765F636F4A84C9AB0EBA6BC4EC01A6F50B2625FD981F637F
++ B38408E927FCDFDD6FA7C9886273B145C82347F1BDA7209914A3E1B258ED0AFAB27873
++ BAE873C64E5529700132409E41A6BBDCBC5EEA592F42019C240A82DF8E83C50A71E9B9
++ 4D30F115F031D07EC0E596EB61E04BCD74A9E7F59571E78CB9CEADE25EE2E5A8DE2956
++ DAC2723CAA61BF2EB0140085#)(p #00EF4BA6827E9D5D36CED28050FB6FF5F0C32000
++ 42801200D5697065B02A0EFC5F2E95CE4336E2D95CFAFE886ECCC1FEE44E0FDDF7EA5F
++ 357D62E6AAE522627E5400A5C73A277E7C50B3640AA63D89582F26885601A9B22DB000
++ D4F1FEC0BE64BE239EE08965B2148969A172DCF7F0CF5E2354230653B369155B7134B4
++ 0FE59F85#)(q #00FD8190156FF7520E41A03D636952668603AE54D9A7BA73274F63FC
++ 0652BB5EACC18391DD8C0BD30BDFB18FE1A5BFAB68C853EDFD9150E394406F7D97C92F
++ C17D515404E2EFF832AF797535A87B1480625BDA34F3D42020528D5449DD1D37E3F8D9
++ 331ED99B5D8A28D74CBA1353DFE4CB8F3A1A3CAF31EAC114063FDE0DECD467#)(u
++  #00B1714DAD19CDE6A240FA93FC4C536C054DB9ED62AEA9ADA9556B662F80760AE6F2
++ 204E673A2705559EF23D2308AAB43C2F6257CEE0D7B3714887412882BD7160AA61112F
++ 744CE31BB1E0E2C0E4FD1A2C3C6FBE7A9D3CDE474B69E24E8AE69DD6EC4DBF7FC09C78
++ E308CE2D6E891E81CC4D42948F3C188BDC7507CDCE366FD4F5#)))
+diff --git a/.gnupg_test/pubring.kbx b/.gnupg_test/pubring.kbx
+new file mode 100644
+index 0000000000000000000000000000000000000000..3698508201c2fcd5cad95eaca07402819bd53a8c
+GIT binary patch
+literal 1784
+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
+ZIF1QDishZ`fAQFs1!D5&4>$^42LRG62RHx#
+
+literal 0
+HcmV?d00001
+
+diff --git a/.gnupg_test/pubring.kbx~ b/.gnupg_test/pubring.kbx~
+new file mode 100644
+index 0000000000000000000000000000000000000000..70cdab3ffc112a1c99995fd1f8d8323a83525dd6
+GIT binary patch
+literal 32
+ecmZQzU{GLWWMJ}kib!Jsf=t2xu^<d$g8%?dDFqw=
+
+literal 0
+HcmV?d00001
+
+diff --git a/.gnupg_test/trustdb.gpg b/.gnupg_test/trustdb.gpg
+new file mode 100644
+index 0000000000000000000000000000000000000000..77c79497d968d6ee3ff2be1dda84e74d183080cf
+GIT binary patch
+literal 1280
+zcmZQfFGy!*W@Ke#VqnM={NKia9WZiX7sn7C(dy(df&(rvqQeCq3Yd)1aKQ`{kjQAb
+zU=J4_2FI+KJI&MP$IlR5dT^Pb!i9w?u2<L~iscb{cp0X>%<cYJ?)OIYxwVgjTf;v6
+MjEFB#bqHk)0Gsa^jsO4v
+
+literal 0
+HcmV?d00001
+
+diff --git a/README.md b/README.md
+new file mode 100644
+index 0000000..581a687
+--- /dev/null
++++ b/README.md
+@@ -0,0 +1,13 @@
++# BTC Miner - Soulvan Coin Agent
++
++This repository contains a secure mining agent prototype that can run trusted miner binaries inside a hardened Docker sandbox, monitor hardware metrics, and help safely check/download releases.
++
++Key files:
++- `src/agent.py` - FastAPI agent that manages miners and implements a small policy loop.
++- `src/sandbox.py` - Hardened Docker runner that enforces 0755 on binaries, read-only mounts, seccomp, and GPG verification.
++- `src/updater_safe.py` - Safe release downloader with optional GPG verification.
++- `contrib/` - systemd service/slice and example seccomp profile.
++
++Notes:
++- You must supply miner binaries and signatures and place them under `bin/` and a public key under `keys/`.
++- The secure sandbox refuses to run unverified binaries.
+diff --git a/VERSION b/VERSION
+new file mode 100644
+index 0000000..6e8bf73
+--- /dev/null
++++ b/VERSION
+@@ -0,0 +1 @@
++0.1.0
+diff --git a/bin/installed-test-miner b/bin/installed-test-miner
+new file mode 100755
+index 0000000..353aaee
+--- /dev/null
++++ b/bin/installed-test-miner
+@@ -0,0 +1,3 @@
++#!/bin/sh
++# minimal test miner script
++printf "test miner running\n"
+diff --git a/bin/test-miner b/bin/test-miner
+new file mode 100755
+index 0000000..353aaee
+--- /dev/null
++++ b/bin/test-miner
+@@ -0,0 +1,3 @@
++#!/bin/sh
++# minimal test miner script
++printf "test miner running\n"
+diff --git a/bin/test-miner.sig b/bin/test-miner.sig
+new file mode 100644
+index 0000000..831a9f0
+--- /dev/null
++++ b/bin/test-miner.sig
+@@ -0,0 +1,11 @@
++-----BEGIN PGP SIGNATURE-----
++
++iQEzBAABCgAdFiEEG1vNZGNZ1OWASbkKjlBH6pQNLDMFAmkR/10ACgkQjlBH6pQN
++LDOhWAf/c3G1oZF6MuZYtdpX/RPxLeO/4PwqPeTVjtG5Ris66+b4k933xw0ZXFFm
++QHLHJiUFYCpZBGNVa5wAwDlPv/Ez654HdCDiDsyJIz5xKl+tOAgKTlBk4xPOdogm
++voj0trzRPPQ4nXp6pQRzxNBWf0xEvxmROM5wrtczmitbmdW+tmkt8FzKwdgpLNrr
++mTzxb+8eevFwbb+/pW+yybOwxOc7MforwsMwodIcftI8fFVqx+gb6GrkZOYeuhQl
++xt8Fz7quh66adHoSaTQw9EwalPR3TYfEGB2vwkqrcZQHxgT9CJS+baEWn2nkBscX
++Qye9Ux8nVg528m9+z4QwvnOLOjclng==
++=lN7e
++-----END PGP SIGNATURE-----
+diff --git a/contrib/miner-agent.service b/contrib/miner-agent.service
+new file mode 100644
+index 0000000..71fc0d8
+--- /dev/null
++++ b/contrib/miner-agent.service
+@@ -0,0 +1,16 @@
++[Unit]
++Description=Miner Agent (runs in miner-agent.slice)
++After=network.target
++Wants=network-online.target
++
++[Service]
++Type=simple
++User=root
++WorkingDirectory=/workspaces/btc-miner-soulvan-coin
++ExecStart=/usr/bin/python3 /workspaces/btc-miner-soulvan-coin/src/agent.py
++Restart=on-failure
++RestartSec=5
++Slice=miner-agent.slice
++
++[Install]
++WantedBy=multi-user.target
+diff --git a/contrib/miner-agent.slice b/contrib/miner-agent.slice
+new file mode 100644
+index 0000000..186cdd8
+--- /dev/null
++++ b/contrib/miner-agent.slice
+@@ -0,0 +1,7 @@
++[Unit]
++Description=Slice for miner-agent resource accounting
++
++[Slice]
++CPUAccounting=yes
++MemoryAccounting=yes
++TasksAccounting=yes
+diff --git a/contrib/seccomp/miner-seccomp.json b/contrib/seccomp/miner-seccomp.json
+new file mode 100644
+index 0000000..fafff5c
+--- /dev/null
++++ b/contrib/seccomp/miner-seccomp.json
+@@ -0,0 +1,21 @@
++{
++  "defaultAction": "SCMP_ACT_ERRNO",
++  "archMap": [
++    {"architecture": "SCMP_ARCH_X86_64", "subArchitectures": []}
++  ],
++  "syscalls": [
++    {
++      "names": [
++        "read","write","exit","exit_group","rt_sigreturn","rt_sigaction",
++        "futex","nanosleep","clock_gettime","getrandom","brk","mmap","mprotect",
++        "munmap","close","fstat","lseek","pread64","pwrite64","access","openat",
++        "newfstatat","stat","lstat"
++      ],
++      "action": "SCMP_ACT_ALLOW",
++      "args": [],
++      "comment": "minimal allowed syscalls for user-space miner runtime",
++      "includes": {},
++      "excludes": {}
++    }
++  ]
++}
+diff --git a/gen-key-params b/gen-key-params
+new file mode 100644
+index 0000000..b10ec9f
+--- /dev/null
++++ b/gen-key-params
+@@ -0,0 +1,10 @@
++%no-protection
++Key-Type: RSA
++Key-Length: 2048
++Subkey-Type: RSA
++Subkey-Length: 2048
++Name-Real: Test Miner Key
++Name-Comment: test key
++Name-Email: test-miner@example.local
++Expire-Date: 0
++%commit
+diff --git a/keys/test-miner.pub b/keys/test-miner.pub
+new file mode 100644
+index 0000000..291dd91
+--- /dev/null
++++ b/keys/test-miner.pub
+@@ -0,0 +1,37 @@
++-----BEGIN PGP PUBLIC KEY BLOCK-----
++
++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
++br147+vGsSbkZdzE4JL3Q7io6EyK5RIfry0=
++=ZuGa
++-----END PGP PUBLIC KEY BLOCK-----
+diff --git a/requirements.txt b/requirements.txt
+new file mode 100644
+index 0000000..04b41bf
+--- /dev/null
++++ b/requirements.txt
+@@ -0,0 +1,6 @@
++fastapi>=0.95.0
++uvicorn[standard]>=0.22.0
++psutil>=5.9.0
++aiohttp>=3.8.0
++pydantic>=1.10.0
++pytest>=7.0.0
+diff --git a/src/__init__.py b/src/__init__.py
+new file mode 100644
+index 0000000..6f9e769
+--- /dev/null
++++ b/src/__init__.py
+@@ -0,0 +1,6 @@
++"""pkg init for miner agent sources"""
++
++__all__ = [
++    "agent",
++    "backends",
++]
+diff --git a/src/__pycache__/__init__.cpython-312.pyc b/src/__pycache__/__init__.cpython-312.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0877b29079e62284daa847aebeba3dbe1742a00
+GIT binary patch
+literal 243
+zcmX@j%ge<81hRhxGlPNjV-N=hn4pZ$0zk%eh7^V<h7`sWrgWw##!6;QmMVpU>~w|9
+zyv!1XwEQB4+|0bxB89~C)Vvaf;{4L0<kaF@tYGdfj-<ro?9{xJVn0o$TkP@iDf!9q
+z@gPQGPELIMN`}uMi+&mDm**E{7Z)S~b?PUTB<q4r)CHQAQ<j*go1CASr(ax@tREi_
+zvNJwjub}c5hfQvNN@-52T@feH2u2_-76%d^m>C%vZ!)NTU}IqAxxvEsft8t?sgb>i
+H9ViC?-)Tg1
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/__pycache__/installer.cpython-312.pyc b/src/__pycache__/installer.cpython-312.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..0bd76a0df7e2a324ad34e9f88f5cfc8072f276f4
+GIT binary patch
+literal 2795
+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
+XKprY0?&D}6x7P>cn+=b+6!`QnK(AR^
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/__pycache__/sandbox.cpython-312.pyc b/src/__pycache__/sandbox.cpython-312.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..e0fafc37f0862d8202ef64a7a5d0a9b995555962
+GIT binary patch
+literal 6248
+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
+V<%5LX|H#&`Wo!7Z4FO@c|1SW(=?MS;
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/__pycache__/updater_safe.cpython-312.pyc b/src/__pycache__/updater_safe.cpython-312.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..75e600858d8f29bc6134784dea4be1831feec4fc
+GIT binary patch
+literal 6652
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/src/agent.py b/src/agent.py
+new file mode 100644
+index 0000000..d58aa49
+--- /dev/null
++++ b/src/agent.py
+@@ -0,0 +1,349 @@
++import asyncio
++import subprocess
++import os
++import re
++import logging
++from typing import Optional, Dict
++from fastapi import FastAPI, HTTPException
++import psutil
++
++from .backends import bitcoin, soulvan
++from .updater import check_and_show_release
++from .updater_safe import download_and_verify_release_asset
++from .installer import atomic_install, validate_installed
++from .hw_monitor import system_metrics
++from . import notifications
++import secrets
++
++LOG = logging.getLogger("miner-agent")
++logging.basicConfig(level=logging.INFO)
++
++# Basic configuration - edit per your binaries/pools
++CONFIG = {
++    # Replace the placeholder paths below with your trusted miner binaries, signatures and pubkeys
++    "bitcoin": {
++        "binary": "/path/to/bitcoin-miner",
++        "signature": "/path/to/bitcoin-miner.sig",
++        "pool": "stratum+tcp://pool:3333",
++        "user": "your_btc_wallet",
++        "extra": ""
++    },
++    "soulvan": {
++        "binary": "/path/to/soulvan-miner",
++        "signature": "/path/to/soulvan-miner.sig",
++        "pool": "stratum+tcp://soulvan-pool:4444",
++        "user": "your_soulvan_wallet",
++        "extra": ""
++    },
++    "policy": {
++        "prefer": ["soulvan", "bitcoin"]
++    },
++    "secure": {
++        "use_docker": True,
++        # Path to the public key used to verify binaries and seccomp signatures
++        "pubkey_path": "/path/to/miner_pubkey.asc",
++        "image": "debian:bookworm-slim",
++        "cpus": 0.5,
++        "memory_mb": 512,
++        "pids_limit": 200,
++        # Optional seccomp profile and its signature (verify before use)
++        "seccomp_path": "/path/to/seccomp.json",
++        "seccomp_sig_path": "/path/to/seccomp.json.sig",
++        # Optional AppArmor profile name (must be installed on host under /etc/apparmor.d/)
++        "apparmor_profile": None,
++        "extra_mounts": [
++            "/etc/ssl/certs:/etc/ssl/certs:ro"
++        ],
++        # Auto-replace behavior: if True, after successful verification attempt install
++        # If require_admin_confirmation is True, installation will create a pending token which must be confirmed
++        "auto_replace": False,
++        "require_admin_confirmation": True
++    },
++    # Notifications: webhook_url (or slack_webhook) and smtp settings
++    "notifications": {
++        "auto_send": False,
++        "webhook_url": None,
++        "smtp": {"enabled": False}
++    }
++}
++
++APP = FastAPI()
++CURRENT_PROC: Optional[subprocess.Popen] = None
++LAST_HASH: Dict[str, float] = {"bitcoin": 0.0, "soulvan": 0.0}
++
++HASH_RE = re.compile(r"([\d\.]+)\s*(H/s|KH/s|MH/s|GH/s|TH/s)", re.IGNORECASE)
++MULT = {"h/s":1, "kh/s":1e3, "mh/s":1e6, "gh/s":1e9, "th/s":1e12}
++
++def parse_hash_rate(line: str) -> Optional[float]:
++    m = HASH_RE.search(line)
++    if not m:
++        return None
++    val = float(m.group(1))
++    unit = m.group(2).lower()
++    for k in MULT:
++        if k in unit:
++            return val * MULT[k]
++    return val
++
++async def monitor_process(proc: subprocess.Popen, kind: str):
++    LOG.info("Monitoring process for %s (pid=%s)", kind, getattr(proc, "pid", None))
++    loop = asyncio.get_running_loop()
++    while proc.poll() is None:
++        line = await loop.run_in_executor(None, proc.stdout.readline)
++        if not line:
++            await asyncio.sleep(0.2)
++            continue
++        try:
++            text = line.decode(errors="ignore").strip()
++        except Exception:
++            text = str(line)
++        h = parse_hash_rate(text)
++        if h:
++            LAST_HASH[kind] = h
++            LOG.info("%s hash rate: %.3f H/s", kind, h)
++    LOG.info("Process %s ended", kind)
++
++async def start_miner(kind: str) -> Optional[subprocess.Popen]:
++    global CURRENT_PROC
++    if CURRENT_PROC and CURRENT_PROC.poll() is None:
++        LOG.warning("A miner is already running. Stop it first.")
++        return None
++
++    gen = bitcoin.generate_command if kind == "bitcoin" else soulvan.generate_command
++    cmd_list = gen(CONFIG[kind])
++
++    secure_cfg = CONFIG.get("secure", {})
++    use_docker = secure_cfg.get("use_docker", False)
++
++    if use_docker:
++        from sandbox import run_miner_in_docker
++
++        bin_path = CONFIG[kind].get("binary")
++        sig_path = CONFIG[kind].get("signature")
++        pubkey = secure_cfg.get("pubkey_path")
++
++        if not bin_path or not sig_path:
++            LOG.error("Secure docker mode requires 'binary' and 'signature' fields in CONFIG for %s", kind)
++            return None
++
++        binary = cmd_list[0]
++        args = cmd_list[1:]
++
++        try:
++            proc = run_miner_in_docker(
++                binary_path=binary,
++                binary_args=args,
++                sig_path=sig_path,
++                pubkey_path=pubkey,
++                image=secure_cfg.get("image"),
++                cpu_quota=secure_cfg.get("cpus", 0.5),
++                memory_mb=secure_cfg.get("memory_mb", 512),
++                pids_limit=secure_cfg.get("pids_limit", 200),
++                seccomp_path=secure_cfg.get("seccomp_path"),
++                extra_mounts=secure_cfg.get("extra_mounts"),
++                container_name=f"miner-{kind}"
++            )
++        except Exception as e:
++            LOG.exception("Failed to start secure container: %s", e)
++            return None
++
++        CURRENT_PROC = proc
++        asyncio.create_task(monitor_process(proc, kind))
++        return proc
++
++    cmd = cmd_list
++    LOG.info("Starting %s miner with: %s", kind, " ".join(cmd))
++    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
++    CURRENT_PROC = proc
++    asyncio.create_task(monitor_process(proc, kind))
++    return proc
++
++async def stop_miner():
++    global CURRENT_PROC
++    if not CURRENT_PROC:
++        return
++    try:
++        LOG.info("Stopping miner pid=%s", CURRENT_PROC.pid)
++        CURRENT_PROC.terminate()
++        await asyncio.get_running_loop().run_in_executor(None, CURRENT_PROC.wait, 10)
++    except Exception:
++        try:
++            CURRENT_PROC.kill()
++        except Exception:
++            pass
++    CURRENT_PROC = None
++
++def system_score() -> float:
++    mem = psutil.virtual_memory()
++    cpu = psutil.cpu_percent(interval=0.1)
++    score = (mem.available / (1024*1024)) - (cpu * 10)
++    return score
++
++async def decide_and_run():
++    pref = CONFIG["policy"]["prefer"]
++    scores = {k: LAST_HASH.get(k, 0.0) for k in pref}
++    chosen = max(scores, key=lambda k: scores[k] or 0.0)
++    if scores[chosen] == 0.0:
++        chosen = pref[0]
++    await start_miner(chosen)
++
++@APP.on_event("startup")
++async def startup_event():
++    version_path = os.path.join(os.path.dirname(__file__), "..", "VERSION")
++    version = "0.0.0"
++    try:
++        with open(version_path, "r") as vf:
++            version = vf.read().strip()
++    except Exception:
++        LOG.info("VERSION file not found; using default.")
++    try:
++        asyncio.create_task(check_and_show_release("example-owner", "example-miner-repo", version))
++    except Exception as e:
++        LOG.info("Update check failed: %s", e)
++    asyncio.create_task(policy_loop())
++
++async def policy_loop():
++    while True:
++        try:
++            if not CURRENT_PROC or (CURRENT_PROC and CURRENT_PROC.poll() is not None):
++                await decide_and_run()
++        except Exception as e:
++            LOG.exception("Policy loop error: %s", e)
++        await asyncio.sleep(10)
++
++@APP.post("/start/{kind}")
++async def api_start(kind: str):
++    if kind not in CONFIG:
++        raise HTTPException(status_code=400, detail="unknown kind")
++    proc = await start_miner(kind)
++    return {"ok": proc is not None, "pid": getattr(proc, "pid", None)}
++
++@APP.post("/stop")
++async def api_stop():
++    await stop_miner()
++    return {"ok": True}
++
++@APP.get("/status")
++async def api_status():
++    pid = getattr(CURRENT_PROC, "pid", None)
++    return {"running_pid": pid, "last_hash": LAST_HASH, "system_score": system_score()}
++
++@APP.get("/metrics")
++async def api_metrics():
++    try:
++        metrics = system_metrics()
++        return {"ok": True, "metrics": metrics}
++    except Exception as e:
++        LOG.exception("Failed to gather metrics: %s", e)
++        raise HTTPException(status_code=500, detail="metrics error")
++
++
++@APP.get("/alerts")
++async def api_alerts(cpu_threshold: Optional[int] = 95, temp_threshold: Optional[int] = 85):
++    try:
++        metrics = system_metrics()
++        thresholds = {"cpu_percent": cpu_threshold, "temperature_c": temp_threshold}
++        from .hw_monitor import check_thresholds
++        alerts = check_thresholds(metrics, thresholds)
++        # auto-send notifications if configured
++        if alerts and CONFIG.get("notifications", {}).get("auto_send"):
++            ncfg = CONFIG.get("notifications", {})
++            res = notifications.notify_alerts(alerts, ncfg)
++            return {"ok": True, "alerts": alerts, "notified": res}
++        return {"ok": True, "alerts": alerts}
++    except Exception as e:
++        LOG.exception("Failed to gather alerts: %s", e)
++        raise HTTPException(status_code=500, detail="alerts error")
++
++@APP.post("/update/check")
++async def api_update_check(owner: str, repo: str):
++    version_path = os.path.join(os.path.dirname(__file__), "..", "VERSION")
++    version = "0.0.0"
++    try:
++        with open(version_path, "r") as vf:
++            version = vf.read().strip()
++    except Exception:
++        pass
++    try:
++        changed = await check_and_show_release(owner, repo, version)
++        return {"ok": True, "update_available": changed}
++    except Exception as e:
++        LOG.exception("update check failed: %s", e)
++        raise HTTPException(status_code=500, detail="update check failed")
++
++@APP.post("/update/download")
++async def api_update_download(owner: str, repo: str, asset_contains: str, pubkey_path: Optional[str] = None):
++    try:
++        path = await download_and_verify_release_asset(owner, repo, asset_contains, pubkey_path=pubkey_path)
++        if path:
++            return {"ok": True, "downloaded_path": path}
++        return {"ok": False, "message": "no verified asset downloaded; release page opened for manual review"}
++    except Exception as e:
++        LOG.exception("download failed: %s", e)
++        raise HTTPException(status_code=500, detail="download failed")
++
++
++@APP.post("/update/install")
++async def api_update_install(owner: str, repo: str, asset_contains: str, install_path: str, pubkey_path: Optional[str] = None):
++    """
++    Downloads and verifies a release asset, then atomically installs it to `install_path`.
++    This endpoint does NOT auto-execute the installed binary. It requires explicit install_path.
++    """
++    try:
++        path = await download_and_verify_release_asset(owner, repo, asset_contains, pubkey_path=pubkey_path)
++        if not path:
++            return {"ok": False, "message": "no verified asset downloaded; release page opened for manual review"}
++        # If auto_replace in config is enabled, perform install or create pending token depending on confirmation flag
++        secure_cfg = CONFIG.get("secure", {})
++        auto_replace = secure_cfg.get("auto_replace", False)
++        require_confirm = secure_cfg.get("require_admin_confirmation", True)
++
++        if not auto_replace:
++            return {"ok": False, "message": "auto_replace disabled in configuration; manual install required"}
++
++        # If admin confirmation required, create a pending install token and return it
++        if require_confirm:
++            token = secrets.token_urlsafe(16)
++            PENDING_INSTALLS[token] = {
++                "owner": owner,
++                "repo": repo,
++                "asset_contains": asset_contains,
++                "downloaded_path": path,
++                "install_path": install_path
++            }
++            return {"ok": True, "pending": True, "token": token, "message": "Confirm install with /update/confirm_install?token=<token>"}
++
++        # else perform install immediately
++        final = atomic_install(path, install_path)
++        ok = validate_installed(final)
++        return {"ok": ok, "installed_path": final}
++    except Exception as e:
++        LOG.exception("install failed: %s", e)
++        raise HTTPException(status_code=500, detail=f"install failed: {e}")
++
++def run_api():
++    import uvicorn
++    uvicorn.run("src.agent:APP", host="0.0.0.0", port=8000, reload=False)
++
++
++# In-memory store for pending installs (token -> info)
++PENDING_INSTALLS: Dict[str, Dict] = {}
++
++
++@APP.post("/update/confirm_install")
++async def api_confirm_install(token: str):
++    info = PENDING_INSTALLS.get(token)
++    if not info:
++        raise HTTPException(status_code=404, detail="pending token not found")
++    try:
++        final = atomic_install(info["downloaded_path"], info["install_path"])
++        ok = validate_installed(final)
++        # remove pending
++        del PENDING_INSTALLS[token]
++        return {"ok": ok, "installed_path": final}
++    except Exception as e:
++        LOG.exception("confirm install failed: %s", e)
++        raise HTTPException(status_code=500, detail=f"confirm install failed: {e}")
++
++if __name__ == "__main__":
++    run_api()
+diff --git a/src/backends/bitcoin.py b/src/backends/bitcoin.py
+new file mode 100644
+index 0000000..a111b75
+--- /dev/null
++++ b/src/backends/bitcoin.py
+@@ -0,0 +1,14 @@
++import shlex
++from typing import List, Dict
++
++def generate_command(config: Dict) -> List[str]:
++    """
++    Return command line list for a Bitcoin miner.
++    IMPORTANT: Replace the binary path in CONFIG with your trusted miner binary.
++    """
++    binary = config.get("binary", "/usr/local/bin/bitcoin-miner")
++    pool = config.get("pool", "stratum+tcp://pool.example:3333")
++    user = config.get("user", "wallet_address")
++    extra = config.get("extra", "")
++    cmd = f"{binary} -o {pool} -u {user} {extra}"
++    return shlex.split(cmd)
+diff --git a/src/backends/soulvan.py b/src/backends/soulvan.py
+new file mode 100644
+index 0000000..c40e6ae
+--- /dev/null
++++ b/src/backends/soulvan.py
+@@ -0,0 +1,14 @@
++import shlex
++from typing import List, Dict
++
++def generate_command(config: Dict) -> List[str]:
++    """
++    Return command line list for a Soulvan coin miner.
++    IMPORTANT: Replace the binary path in CONFIG with your trusted miner binary.
++    """
++    binary = config.get("binary", "/usr/local/bin/soulvan-miner")
++    pool = config.get("pool", "stratum+tcp://soulvan-pool.example:4444")
++    user = config.get("user", "soulvan_wallet")
++    extra = config.get("extra", "")
++    cmd = f"{binary} --pool {pool} --user {user} {extra}"
++    return shlex.split(cmd)
+diff --git a/src/cli.py b/src/cli.py
+new file mode 100644
+index 0000000..0f0eac8
+--- /dev/null
++++ b/src/cli.py
+@@ -0,0 +1,113 @@
++#!/usr/bin/env python3
++"""
++Simple CLI for common tasks:
++- run-agent         : start the FastAPI agent (uvicorn)
++- update-check      : open release page if newer release exists
++- update-download   : download & verify a release asset (does not install)
++"""
++import argparse
++import asyncio
++import os
++import sys
++import subprocess
++
++from updater import check_and_show_release
++from updater_safe import download_and_verify_release_asset
++
++def run_agent():
++    subprocess.run([sys.executable, "src/agent.py"])
++
++async def do_update_check(owner: str, repo: str):
++    version_path = os.path.join(os.path.dirname(__file__), "..", "VERSION")
++    version = "0.0.0"
++    try:
++        with open(version_path, "r") as vf:
++            version = vf.read().strip()
++    except Exception:
++        pass
++    changed = await check_and_show_release(owner, repo, version)
++    if changed:
++        print("Update available. Opened release page in host browser.")
++    else:
++        print("No update detected or check failed.")
++
++async def do_update_download(owner: str, repo: str, asset_contains: str, pubkey: str = None):
++    path = await download_and_verify_release_asset(owner, repo, asset_contains, pubkey_path=pubkey)
++    if path:
++        print("Verified asset downloaded to:", path)
++    else:
++        print("No verified asset downloaded; opened release page for manual review (if available).")
++
++def main():
++    p = argparse.ArgumentParser(prog="agent-cli")
++    sub = p.add_subparsers(dest="cmd", required=True)
++
++    sub.add_parser("run-agent", help="Run the FastAPI agent (foreground)")
++
++    ccheck = sub.add_parser("update-check", help="Check repo releases and open browser if newer")
++    ccheck.add_argument("owner")
++    ccheck.add_argument("repo")
++
++    cdl = sub.add_parser("update-download", help="Download + verify a release asset (no auto-install)")
++    cdl.add_argument("owner")
++    cdl.add_argument("repo")
++    cdl.add_argument("asset_contains", help="substring to match asset name (e.g. linux-amd64)")
++    cdl.add_argument("--pubkey", help="optional path to GPG public key to import for verification", default=None)
++
++    cinst = sub.add_parser("update-install", help="Download + verify + install a release asset (atomic)")
++    cinst.add_argument("owner")
++    cinst.add_argument("repo")
++    cinst.add_argument("asset_contains")
++    cinst.add_argument("install_path", help="destination path for the installed binary")
++    cinst.add_argument("--pubkey", help="optional path to GPG public key to import for verification", default=None)
++
++    args = p.parse_args()
++
++    if args.cmd == "run-agent":
++        run_agent()
++        return
++
++    if args.cmd == "update-check":
++        asyncio.run(do_update_check(args.owner, args.repo))
++        return
++
++    if args.cmd == "update-download":
++        asyncio.run(do_update_download(args.owner, args.repo, args.asset_contains, pubkey=args.pubkey))
++        return
++
++    if args.cmd == "update-install":
++        # perform download+verify and atomic install
++        # This CLI performs a local download+verify and then asks to install locally.
++        path = asyncio.run(download_and_verify_release_asset(args.owner, args.repo, args.asset_contains, pubkey_path=args.pubkey))
++        if not path:
++            print("No verified asset downloaded; release page opened for manual review (if available).")
++            return
++        # ask for confirmation
++        resp = input(f"Install {path} -> {args.install_path}? [y/N]: ").strip().lower()
++        if resp != "y":
++            print("Install aborted by user.")
++            return
++        # import installer lazily
++        from installer import atomic_install
++        try:
++            final = atomic_install(path, args.install_path)
++            print("Installed to:", final)
++        except Exception as e:
++            print("Install failed:", e)
++        return
++
++    if args.cmd == "confirm-install":
++        # Confirm a pending install token on a running agent (HTTP POST)
++        import urllib.parse, urllib.request
++        token = args.token
++        url = f"http://localhost:8000/update/confirm_install?token={urllib.parse.quote(token)}"
++        try:
++            req = urllib.request.Request(url, method="POST")
++            with urllib.request.urlopen(req, timeout=10) as resp:
++                print(resp.read().decode())
++        except Exception as e:
++            print("Confirm install failed:", e)
++        return
++
++if __name__ == "__main__":
++    main()
+diff --git a/src/hw_monitor.py b/src/hw_monitor.py
+new file mode 100644
+index 0000000..d6d3d1a
+--- /dev/null
++++ b/src/hw_monitor.py
+@@ -0,0 +1,64 @@
++import subprocess
++import shutil
++import psutil
++from typing import Dict, Optional
++
++def get_nvidia_smi() -> Optional[Dict]:
++    if not shutil.which("nvidia-smi"):
++        return None
++    cmd = ["nvidia-smi", "--query-gpu=index,name,memory.total,memory.used,utilization.gpu,temperature.gpu", "--format=csv,noheader,nounits"]
++    try:
++        out = subprocess.check_output(cmd, text=True).strip().splitlines()
++        gpus = []
++        for line in out:
++            idx, name, mem_total, mem_used, util, temp = [x.strip() for x in line.split(",")]
++            gpus.append({
++                "index": int(idx),
++                "name": name,
++                "memory_total_mb": int(mem_total),
++                "memory_used_mb": int(mem_used),
++                "util_percent": int(util),
++                "temperature_c": int(temp),
++            })
++        return {"gpus": gpus}
++    except Exception:
++        return None
++
++def system_metrics() -> Dict:
++    mem = psutil.virtual_memory()
++    cpu = psutil.cpu_percent(interval=0.1)
++    metrics = {
++        "cpu_percent": cpu,
++        "mem_total_mb": int(mem.total / (1024*1024)),
++        "mem_available_mb": int(mem.available / (1024*1024)),
++    }
++    gpu = get_nvidia_smi()
++    if gpu:
++        metrics.update(gpu)
++    return metrics
++
++def check_thresholds(metrics: Dict, thresholds: Optional[Dict] = None) -> Dict:
++    """
++    Given metrics and optional thresholds, return a dict of alerts.
++    thresholds example: {"cpu_percent": 90, "temperature_c": 85}
++    """
++    if thresholds is None:
++        thresholds = {"cpu_percent": 95}
++    alerts = {}
++    for k, thr in thresholds.items():
++        # nested keys like GPU temperature may require special handling
++        if k in metrics:
++            try:
++                val = float(metrics[k])
++                if val >= thr:
++                    alerts[k] = {"value": val, "threshold": thr}
++            except Exception:
++                continue
++        else:
++            # try GPU nested fields
++            if "gpus" in metrics and k == "temperature_c":
++                for g in metrics["gpus"]:
++                    if g.get("temperature_c", 0) >= thr:
++                        alerts.setdefault(k, []).append({"gpu": g.get("index"), "value": g.get("temperature_c")})
++    return alerts
++
+diff --git a/src/installer.py b/src/installer.py
+new file mode 100644
+index 0000000..5f2308d
+--- /dev/null
++++ b/src/installer.py
+@@ -0,0 +1,50 @@
++import os
++import shutil
++import stat
++import tempfile
++import logging
++from typing import Optional
++
++LOG = logging.getLogger("miner-installer")
++
++def atomic_install(src_path: str, dest_path: str, mode: int = 0o755) -> str:
++    """
++    Atomically install a verified binary from `src_path` to `dest_path`.
++    - Writes to a temp file in the destination directory then renames it.
++    - Sets file mode to `mode` (default 0755).
++    - Ensures destination directory exists.
++    Returns the final path on success.
++    Raises on error.
++    """
++    if not os.path.exists(src_path):
++        raise FileNotFoundError(f"source does not exist: {src_path}")
++
++    d = os.path.dirname(os.path.abspath(dest_path))
++    os.makedirs(d, exist_ok=True)
++
++    # Use tempfile in destination dir to ensure same-filesystem atomic rename
++    fd, tmp = tempfile.mkstemp(dir=d)
++    os.close(fd)
++    try:
++        shutil.copy2(src_path, tmp)
++        os.chmod(tmp, mode)
++        # atomic move
++        os.replace(tmp, dest_path)
++        LOG.info("Installed %s -> %s", src_path, dest_path)
++        return dest_path
++    except Exception:
++        # cleanup temp file on failure
++        try:
++            os.unlink(tmp)
++        except Exception:
++            pass
++        raise
++
++def remove_if_exists(path: str):
++    if os.path.exists(path):
++        os.remove(path)
++
++def validate_installed(path: str, expected_mode: int = 0o755) -> bool:
++    st = os.stat(path)
++    mode = stat.S_IMODE(st.st_mode)
++    return mode == expected_mode and stat.S_ISREG(st.st_mode)
+diff --git a/src/notifications.py b/src/notifications.py
+new file mode 100644
+index 0000000..18bac3d
+--- /dev/null
++++ b/src/notifications.py
+@@ -0,0 +1,66 @@
++import json
++import smtplib
++from email.message import EmailMessage
++from typing import Dict, Optional
++import urllib.request
++import logging
++
++LOG = logging.getLogger("miner-notifications")
++
++def send_webhook(url: str, payload: Dict) -> bool:
++    try:
++        data = json.dumps(payload).encode("utf-8")
++        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
++        with urllib.request.urlopen(req, timeout=10) as resp:
++            return resp.getcode() in (200, 201, 202)
++    except Exception as e:
++        LOG.exception("Webhook send failed: %s", e)
++        return False
++
++def send_email(smtp_cfg: Dict, subject: str, body: str, recipients: Optional[list] = None) -> bool:
++    try:
++        msg = EmailMessage()
++        msg["Subject"] = subject
++        msg["From"] = smtp_cfg.get("from_addr")
++        msg["To"] = ",".join(recipients or smtp_cfg.get("recipients", []))
++        msg.set_content(body)
++
++        host = smtp_cfg.get("host", "localhost")
++        port = int(smtp_cfg.get("port", 25))
++        user = smtp_cfg.get("user")
++        password = smtp_cfg.get("password")
++        use_tls = smtp_cfg.get("tls", False)
++
++        if use_tls:
++            s = smtplib.SMTP(host, port, timeout=10)
++            s.starttls()
++        else:
++            s = smtplib.SMTP(host, port, timeout=10)
++
++        if user and password:
++            s.login(user, password)
++
++        s.send_message(msg)
++        s.quit()
++        return True
++    except Exception as e:
++        LOG.exception("Email send failed: %s", e)
++        return False
++
++def notify_alerts(alerts: Dict, cfg: Dict) -> Dict:
++    results = {"webhook": None, "email": None}
++    payload = {"type": "miner_alert", "alerts": alerts}
++    if not cfg:
++        return results
++    webhook = cfg.get("webhook_url") or cfg.get("slack_webhook")
++    if webhook:
++        results["webhook"] = send_webhook(webhook, payload)
++
++    smtp = cfg.get("smtp")
++    if smtp and smtp.get("enabled"):
++        subject = smtp.get("subject", "Miner alerts")
++        body = json.dumps(alerts, indent=2)
++        recipients = smtp.get("recipients")
++        results["email"] = send_email(smtp, subject, body, recipients)
++
++    return results
+diff --git a/src/sandbox.py b/src/sandbox.py
+new file mode 100644
+index 0000000..c58cd8a
+--- /dev/null
++++ b/src/sandbox.py
+@@ -0,0 +1,125 @@
++import os
++import shutil
++import stat
++import subprocess
++import logging
++from typing import List, Optional
++
++from .updater_safe import gpg_verify
++
++LOG = logging.getLogger("miner-sandbox")
++logging.basicConfig(level=logging.INFO)
++
++DEFAULT_IMAGE = "debian:bookworm-slim"
++
++def _ensure_docker_available():
++    if not shutil.which("docker"):
++        raise RuntimeError("docker not found on PATH. Install Docker to use the sandbox runner.")
++
++def _ensure_executable_and_mode(path: str):
++    if not os.path.exists(path):
++        raise FileNotFoundError(f"binary not found: {path}")
++    st = os.stat(path)
++    mode = stat.S_IMODE(st.st_mode)
++    if mode != 0o755:
++        raise PermissionError(f"binary permissions must be 0755 (found {oct(mode)}): {path}")
++    if not stat.S_ISREG(st.st_mode):
++        raise PermissionError(f"binary is not a regular file: {path}")
++
++def _reject_writable_mounts(mounts: List[str]):
++    for m in mounts:
++        parts = m.split(":")
++        host = parts[0]
++        mode = parts[2] if len(parts) >= 3 else None
++        if mode and mode != "ro":
++            raise PermissionError(f"Writable mount mode not allowed: {m}")
++        if not mode:
++            raise PermissionError(f"Mount mode must be explicit and read-only (add ':ro'): {m}")
++        if not os.path.exists(host):
++            raise FileNotFoundError(f"Mount host path does not exist: {host}")
++        st = os.stat(host)
++        if st.st_mode & stat.S_IWUSR or st.st_mode & stat.S_IWGRP or st.st_mode & stat.S_IWOTH:
++            raise PermissionError(f"Host mount path must not be writable: {host}")
++
++def run_miner_in_docker(
++    binary_path: str,
++    binary_args: List[str],
++    sig_path: Optional[str] = None,
++    pubkey_path: Optional[str] = None,
++    image: str = DEFAULT_IMAGE,
++    cpu_quota: float = 0.5,
++    memory_mb: int = 512,
++    pids_limit: int = 200,
++    container_name: Optional[str] = None,
++    seccomp_path: Optional[str] = None,
++    seccomp_sig_path: Optional[str] = None,
++    apparmor_profile: Optional[str] = None,
++    extra_mounts: Optional[List[str]] = None,
++) -> subprocess.Popen:
++    _ensure_docker_available()
++    _ensure_executable_and_mode(binary_path)
++
++    if sig_path:
++        LOG.info("Verifying binary with provided signature...")
++        ok = gpg_verify(sig_path, binary_path, pubkey_path)
++        if not ok:
++            raise RuntimeError("GPG verification failed. Refusing to run unverified binary.")
++        LOG.info("GPG verification succeeded.")
++    else:
++        raise RuntimeError("Signature required: provide sig_path to verify binary before running.")
++
++    name = container_name or f"miner-{os.getpid()}"
++    memory_arg = f"{memory_mb}m"
++    cpus_arg = str(cpu_quota)
++
++    mounts = [
++        f"{os.path.abspath(binary_path)}:/opt/miner:ro",
++        "/etc/ssl/certs:/etc/ssl/certs:ro",
++    ]
++    if extra_mounts:
++        mounts += extra_mounts
++
++    _reject_writable_mounts(mounts)
++
++    docker_cmd = [
++        "docker", "run", "--rm",
++        "--name", name,
++        "--cap-drop=ALL",
++        "--security-opt", "no-new-privileges",
++        "--read-only",
++        "--pids-limit", str(pids_limit),
++        "--memory", memory_arg,
++        "--cpus", cpus_arg,
++        "--tmpfs", "/tmp:rw,size=100m",
++    ]
++
++    if seccomp_path:
++        if not os.path.exists(seccomp_path):
++            raise FileNotFoundError(f"seccomp profile not found: {seccomp_path}")
++        # if signature provided, verify seccomp profile before using
++        if seccomp_sig_path:
++            if not os.path.exists(seccomp_sig_path):
++                raise FileNotFoundError(f"seccomp signature not found: {seccomp_sig_path}")
++            # verify signature of seccomp file
++            ok = gpg_verify(seccomp_sig_path, seccomp_path, pubkey_path)
++            if not ok:
++                raise RuntimeError("Seccomp profile signature verification failed")
++        docker_cmd += ["--security-opt", f"seccomp={seccomp_path}"]
++
++    # AppArmor support (profile name). Ensure host has the profile installed under /etc/apparmor.d/
++    if apparmor_profile:
++        profile_path = f"/etc/apparmor.d/{apparmor_profile}"
++        if not os.path.exists(profile_path):
++            raise FileNotFoundError(f"AppArmor profile not found on host: {profile_path}")
++        docker_cmd += ["--security-opt", f"apparmor={apparmor_profile}"]
++
++    for m in mounts:
++        docker_cmd += ["-v", m]
++
++    docker_cmd += ["--user", "65534:65534"]
++
++    docker_cmd += [image, "/opt/miner"] + binary_args
++
++    LOG.info("Running hardened container: %s", " ".join(docker_cmd))
++    proc = subprocess.Popen(docker_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
++    return proc
+diff --git a/src/updater.py b/src/updater.py
+new file mode 100644
+index 0000000..0f5e310
+--- /dev/null
++++ b/src/updater.py
+@@ -0,0 +1,32 @@
++import aiohttp
++import os
++import webbrowser
++from typing import Optional
++
++GITHUB_API = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
++
++async def latest_release_info(owner: str, repo: str) -> Optional[dict]:
++    url = GITHUB_API.format(owner=owner, repo=repo)
++    async with aiohttp.ClientSession() as session:
++        async with session.get(url, headers={"Accept": "application/vnd.github+json"}) as resp:
++            if resp.status == 200:
++                return await resp.json()
++            return None
++
++def open_release_in_browser(html_url: str):
++    # prefer devcontainer host browser helper if available
++    browser = os.environ.get("BROWSER")
++    if browser:
++        os.system(f'"$BROWSER" "{html_url}" &')
++    else:
++        webbrowser.open(html_url)
++
++async def check_and_show_release(owner: str, repo: str, current_version: str) -> bool:
++    info = await latest_release_info(owner, repo)
++    if not info:
++        return False
++    tag = info.get("tag_name", "")
++    if tag and tag != current_version:
++        open_release_in_browser(info.get("html_url", ""))
++        return True
++    return False
+diff --git a/src/updater_safe.py b/src/updater_safe.py
+new file mode 100644
+index 0000000..4864536
+--- /dev/null
++++ b/src/updater_safe.py
+@@ -0,0 +1,85 @@
++import aiohttp
++import asyncio
++import os
++import hashlib
++import subprocess
++import tempfile
++from typing import Optional
++
++GITHUB_API = "https://api.github.com/repos/{owner}/{repo}/releases/latest"
++
++async def latest_release(owner: str, repo: str) -> Optional[dict]:
++    url = GITHUB_API.format(owner=owner, repo=repo)
++    async with aiohttp.ClientSession() as s:
++        async with s.get(url, headers={"Accept": "application/vnd.github+json"}) as r:
++            if r.status == 200:
++                return await r.json()
++            return None
++
++async def download_url(url: str, dest_path: str):
++    async with aiohttp.ClientSession() as s:
++        async with s.get(url) as r:
++            r.raise_for_status()
++            with open(dest_path, "wb") as f:
++                async for chunk in r.content.iter_chunked(1 << 20):
++                    f.write(chunk)
++
++def sha256_of(path: str) -> str:
++    h = hashlib.sha256()
++    with open(path, "rb") as f:
++        for chunk in iter(lambda: f.read(1 << 20), b""):
++            h.update(chunk)
++    return h.hexdigest()
++
++def gpg_verify(sig_path: str, data_path: str, pubkey_path: Optional[str] = None) -> bool:
++    try:
++        if pubkey_path:
++            subprocess.run(["gpg", "--import", pubkey_path], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
++        res = subprocess.run(["gpg", "--verify", sig_path, data_path], check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
++        return res.returncode == 0
++    except Exception:
++        return False
++
++def open_in_host_browser(url: str):
++    try:
++        os.system(f'"$BROWSER" "{url}" &')
++    except Exception:
++        import webbrowser
++        webbrowser.open(url)
++
++async def download_and_verify_release_asset(owner: str, repo: str, asset_name_contains: str,
++                                            pubkey_path: Optional[str] = None) -> Optional[str]:
++    info = await latest_release(owner, repo)
++    if not info:
++        return None
++    assets = info.get("assets", [])
++    chosen = None
++    sig_asset = None
++    for a in assets:
++        name = a.get("name", "")
++        if asset_name_contains in name and chosen is None:
++            chosen = a
++        if name.endswith(".asc") or name.endswith(".sig"):
++            if chosen and name.startswith(os.path.splitext(chosen.get("name", ""))[0]):
++                sig_asset = a
++    if not chosen:
++        return None
++    tmpdir = tempfile.mkdtemp(prefix="updater-")
++    data_path = os.path.join(tmpdir, chosen["name"])
++    await download_url(chosen["browser_download_url"], data_path)
++
++    if sig_asset:
++        sig_path = os.path.join(tmpdir, sig_asset["name"])
++        await download_url(sig_asset["browser_download_url"], sig_path)
++        ok = gpg_verify(sig_path, data_path, pubkey_path)
++        if ok:
++            return data_path
++        else:
++            open_in_host_browser(info.get("html_url", ""))
++            return None
++
++    h = sha256_of(data_path)
++    print("Downloaded:", data_path)
++    print("SHA256:", h)
++    open_in_host_browser(info.get("html_url", ""))
++    return None
+diff --git a/tests/__pycache__/conftest.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/conftest.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..f993e644ff55e1e2af20229777e2bc08216ee296
+GIT binary patch
+literal 678
+zcmX@j%ge<81P=cMGw%TD#~=<2utOQ26&M*9rZc24q%h_%L@|PCrd;M^CPs!_mMB(6
+zhzwg48(4-tianJ*O8{mFg3b~~uwg75Dn()P2pWe<afAvOE0t$8(7hm#!nB$R!h(rJ
+z@uu>ovSD*w8Do(wc9|?$h#AOa3PUO{%xp%6O2$e?P3D&%1%6dbdU~4tw>XkYGjmEZ
+z^NMfrI22UI!+DbN1(hYK#U*-)#l@*bC7JnodPS+_MVTe3w>aTKx7cA~TtLkr<?)F{
+zx0s77i*GUI7vEwjNG!>?#h#c{3}&!o<!9#IVo%8|%1g{my~Pn9pO%@E8Xtd)CCJ}D
+z<Q5yy5kQ+(GJFQP@0W>wd45qgP-k*#v3^oXvTkl>UTTqUaeiq|Sz?}UGSDo2kd4Lq
+z$@zI{V5b&T{^GF7%}*)KNwq5iMGYu;i<5xF2WCb_#`_EmEey?Ew;4D;urY9OwU;-R
+zx7Rn;PbivRKCygy&BU4oPRrdFx-a)%=)b|^vWo4FlFQ;Qm)Tt#SZ*-0cNF(mbXHts
+h7Qey5-tN)p(eB^qKf!TA$yFAa56lcK5=Edy0|3W6or3@X
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/__pycache__/test_installer.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/test_installer.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..b4a2e3e63ad89e0ddb20ecf486c10e4261a0cb66
+GIT binary patch
+literal 3717
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/__pycache__/test_sandbox.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/test_sandbox.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..4fea9b0b8a2967f290daad0c4f1ef06116b4dc16
+GIT binary patch
+literal 2835
+zcmb_eO=ufO6rR~1X(d^)<NTO736<l5qo%g(ByO6J+OZp(kkqORZ6Tr{WbGzeMcP$o
+zM)eO0m8ro=DO86-pe2w)4=xTg*Fq0XuDw`9A!g&!LVM|<kj4jtq0l!Yt>nas9cTyk
+z&FtHmH}mFw-+TLWFz83n&iu2}Tv8DFoxiwEstr~rU~mKJNXHoz!=jh6a#F%5tHe}X
+z{o;vv#20VOD|#)aiQX6UK`&+e*+47+bLBY{Ytj{vL0tv8L-&Aep2lJCpM1k;7&~5?
+zu=ELgDp@;$=sX~0cve3LaRV_dv>?*%L0tv(44kR9#oD}ngc0+)+O+158oiF)xxyuI
+zYq4e-qiNKM`VhsF;PgeX#5Gg$MKp=SQgkL1v24qjGAT1G7Re=8Dx%v41ucsRby#&g
+zxoKul=6FcLqy}|%j+z-GYO_&0Z|Nh1*o1KJoc(dbqIqJ(jVU9UXNif75r^A|XKmg1
+z4z2RzuD=<Xw8<5kOC({F36|{6nwCMjsh!V!lCZjywrNH9W>m;{?KXRI)6Oxj-eQM1
+zG15ko(f9_3NE7VIZ;qY-QA8`g<}VLkKUiryeBT%T8)0=EuV~E=wIgNi$kOZ4iuUfB
+z%#~~6Q+2{R^}*V&_nwr0P=_RMvK~Cp)&u(yXm6kb;A|#<&{bT(>5cPXDsQ^f2ovL1
+zCR(~4a94v+0qb%jgj)xn2_EpZu5|&JpldC?!yPqxw$mLK>d<jlZ-&seXH_<w^*`*p
+z8LD3l)S#+H9q)u`T>|9MRyccSM+9CYH03vvDLa%h{pPoD<K|x=!agT3Nla$MCpd5&
+z$)=8)OaTmu3QGx(n$tXPkgQ3mX<H2l6V5G1ri_FoM`PJsoHN3~mnf%GC`2H*$m!l5
+zi67@pV$gW+iT-}F7uN7~bOuBbEo&{MlV$BdacEgl=f`HpmRiFV<+T;XGk<RO+_m>g
+zYDL*w1L{|w-uHEJ7#^>~^!D3#@ZxAiJI0ZE{Ew$sDS?MdS6S)0EiVi$dLAf|H7`th
+z%nhtl&V{?4SB4MC_YSGUM_z#Bsh2|XBG}>$64Q1#mKxY7;BO#{-juFN|39J&(&ajm
+zHzOFBsR(Au1^Ic*d})7VUESc1T=Pd^TcW<8Y&_d@P(EHmxhLvq9JxGonm<7#W`d_8
+zc8*2#1WTMEwxbavq1#qw+RSpGYmS<|qML-YKr9I7bOYgp)1;c1+iJNn?%IZwoVOSa
+zt7JD!a+H(}>0K2{N98X^9glcBN;zXfyj8J(T42ALYM(U+yVP(`Y?1gO6W4d-R!Inq
+z@g3<+5I}{%u2Q-j2o=vRE86_|+4FPnxHNdb)L&8dEjRDFcBwSB)O4sg@+>9#1SPu4
+zTGzs!1#d;`<%H<_t!Z~@rrgv~99dR;^A~0>%#FDwKPZh<l=kJ8J=Z2n*`?sC#nBbc
+zm(H@%dF#Vl=N>5CYeBHU+0s{Ii@$BSSH9P)4xfAhTYdyTw$J-7i!R19lW1-(7MYya
+zAJNkFOz&!Vr2q^{H@8IpX2jKh0pzHIQ#1Ys%EBJf4%VNCBeEYpge8F)asb9pWyRjD
+zkx{M9BI8<@#V-Nr1QQ+H%ovC&8j{xsHiDsAuIpKFuo3dJ3vb+MUkaaII{a2e8{nZI
+z<VAasC(FTg%Jc2_?L)2d-BxvIzc<|CXcKue!%T}hO=oh`@%r1oc=hk5Cqbz}7?gt^
+zVu<SD`06Uh>+1ZlSU8%fk`Ahbk<Ib4<S3LSn7B8nAS5ZMCw@Rg1rXR5E)yP4!b2%2
+zwXU6p%9PI-1Ed>tKx;(#;IWJ`{uQA)^qKDwYJP+Qk5KRz)b>P?@Hl>=d2#QP)&TBV
+KZCCK1F!wJQ&s8!2
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/__pycache__/test_updater_safe.cpython-312-pytest-9.0.0.pyc b/tests/__pycache__/test_updater_safe.cpython-312-pytest-9.0.0.pyc
+new file mode 100644
+index 0000000000000000000000000000000000000000..004ff6344d27f4599a09ef7501cea748dac430bb
+GIT binary patch
+literal 4697
+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
+
+literal 0
+HcmV?d00001
+
+diff --git a/tests/conftest.py b/tests/conftest.py
+new file mode 100644
+index 0000000..7c2719f
+--- /dev/null
++++ b/tests/conftest.py
+@@ -0,0 +1,7 @@
++import sys
++import os
++
++# Ensure repository root is on sys.path so tests can import `src` package
++ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
++if ROOT not in sys.path:
++    sys.path.insert(0, ROOT)
+diff --git a/tests/test_installer.py b/tests/test_installer.py
+new file mode 100644
+index 0000000..cf4249e
+--- /dev/null
++++ b/tests/test_installer.py
+@@ -0,0 +1,17 @@
++import tempfile
++import os
++import stat
++from src.installer import atomic_install, validate_installed
++
++def test_atomic_install_and_validate(tmp_path):
++    src = tmp_path / "srcbin"
++    src.write_bytes(b"binary")
++    dest_dir = tmp_path / "dest"
++    dest_dir.mkdir()
++    dest = dest_dir / "binprog"
++
++    final = atomic_install(str(src), str(dest))
++    assert os.path.exists(final)
++    assert validate_installed(final)
++    st = os.stat(final)
++    assert stat.S_IMODE(st.st_mode) == 0o755
+diff --git a/tests/test_sandbox.py b/tests/test_sandbox.py
+new file mode 100644
+index 0000000..a9b3ea3
+--- /dev/null
++++ b/tests/test_sandbox.py
+@@ -0,0 +1,37 @@
++import os
++import tempfile
++import stat
++import pytest
++from src import sandbox
++
++def test_ensure_executable_and_mode_rejects_nonexistent():
++    with pytest.raises(FileNotFoundError):
++        sandbox._ensure_executable_and_mode("/nonexistent/path/does/not/exist")
++
++def test_ensure_executable_and_mode_requires_0755(tmp_path):
++    f = tmp_path / "binfile"
++    f.write_bytes(b"#!/bin/sh\necho hi\n")
++    os.chmod(f, 0o644)
++    with pytest.raises(PermissionError):
++        sandbox._ensure_executable_and_mode(str(f))
++    os.chmod(f, 0o755)
++    sandbox._ensure_executable_and_mode(str(f))
++
++def test_reject_writable_mounts_requires_ro_and_nonwritable_host(tmp_path):
++    host = tmp_path / "writable"
++    host.mkdir()
++    os.chmod(host, 0o700)
++    mount = f"{host}:/opt/data:ro"
++    with pytest.raises(PermissionError):
++        sandbox._reject_writable_mounts([mount])
++    host2 = tmp_path / "readonly"
++    host2.mkdir()
++    os.chmod(host2, 0o555)
++    mount2 = f"{host2}:/opt/data:ro"
++    sandbox._reject_writable_mounts([mount2])
++
++def test_reject_writable_mounts_rejects_missing_mode(tmp_path):
++    host = tmp_path / "h"
++    host.mkdir()
++    with pytest.raises(PermissionError):
++        sandbox._reject_writable_mounts([f"{host}:/opt/data"])
+diff --git a/tests/test_updater_safe.py b/tests/test_updater_safe.py
+new file mode 100644
+index 0000000..e003e39
+--- /dev/null
++++ b/tests/test_updater_safe.py
+@@ -0,0 +1,30 @@
++import tempfile
++import os
++from src.updater_safe import sha256_of, gpg_verify
++
++def test_sha256_of_tmpfile():
++    tf = tempfile.NamedTemporaryFile(delete=False)
++    try:
++        tf.write(b"hello world")
++        tf.flush()
++        tf.close()
++        h = sha256_of(tf.name)
++        assert isinstance(h, str) and len(h) == 64
++    finally:
++        os.unlink(tf.name)
++
++def test_gpg_verify_fails_on_invalid_files():
++    fdata = tempfile.NamedTemporaryFile(delete=False)
++    fsig = tempfile.NamedTemporaryFile(delete=False)
++    try:
++        fdata.write(b"data")
++        fdata.flush()
++        fsig.write(b"sig")
++        fsig.flush()
++        fdata.close()
++        fsig.close()
++        ok = gpg_verify(fsig.name, fdata.name, pubkey_path=None)
++        assert ok is False
++    finally:
++        os.unlink(fdata.name)
++        os.unlink(fsig.name)
+-- 
+2.50.1
+
