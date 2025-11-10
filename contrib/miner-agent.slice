@@ -1,0 +1,7 @@
+[Unit]
+Description=Slice for miner-agent resource accounting
+
+[Slice]
+CPUAccounting=yes
+MemoryAccounting=yes
+TasksAccounting=yes

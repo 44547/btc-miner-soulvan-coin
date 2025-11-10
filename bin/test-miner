@@ -1,0 +1,3 @@
+#!/bin/sh
+# minimal test miner script
+printf "test miner running\n"

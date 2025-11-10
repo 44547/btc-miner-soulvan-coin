@@ -1,0 +1,16 @@
+[Unit]
+Description=Miner Agent (runs in miner-agent.slice)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/workspaces/btc-miner-soulvan-coin
+ExecStart=/usr/bin/python3 /workspaces/btc-miner-soulvan-coin/src/agent.py
+Restart=on-failure
+RestartSec=5
+Slice=miner-agent.slice
+
+[Install]
+WantedBy=multi-user.target

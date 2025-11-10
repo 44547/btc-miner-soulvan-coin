@@ -1,0 +1,10 @@
+%no-protection
+Key-Type: RSA
+Key-Length: 2048
+Subkey-Type: RSA
+Subkey-Length: 2048
+Name-Real: Test Miner Key
+Name-Comment: test key
+Name-Email: test-miner@example.local
+Expire-Date: 0
+%commit

@@ -1,0 +1,21 @@
+{
+  "defaultAction": "SCMP_ACT_ERRNO",
+  "archMap": [
+    {"architecture": "SCMP_ARCH_X86_64", "subArchitectures": []}
+  ],
+  "syscalls": [
+    {
+      "names": [
+        "read","write","exit","exit_group","rt_sigreturn","rt_sigaction",
+        "futex","nanosleep","clock_gettime","getrandom","brk","mmap","mprotect",
+        "munmap","close","fstat","lseek","pread64","pwrite64","access","openat",
+        "newfstatat","stat","lstat"
+      ],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [],
+      "comment": "minimal allowed syscalls for user-space miner runtime",
+      "includes": {},
+      "excludes": {}
+    }
+  ]
+}
